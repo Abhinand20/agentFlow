@@ -10,6 +10,9 @@ import (
 )
 
 func accountEntryFlow(prog *model.Program, diags *diag.Diagnostics) {
+	if len(prog.Flows) == 0 {
+		return
+	}
 	var entries []string
 	for _, ref := range prog.Order {
 		if ref.Kind != model.DeclFlow {

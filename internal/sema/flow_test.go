@@ -46,6 +46,13 @@ flow f { x }`)
 	}
 }
 
+func TestNoFlowsNoAF138(t *testing.T) {
+	_, diags := resolveSrc(t, `use a { kind: model-provider models: [opus] }`)
+	if hasCode(diags, "AF138") {
+		t.Fatalf("AF138 should not fire when no flows declared: %#v", diags)
+	}
+}
+
 func TestMultipleEntryFlows_AF139(t *testing.T) {
 	_, diags := resolveSrc(t, `use a { kind: model-provider models: [s] }
 agent x { model: s }

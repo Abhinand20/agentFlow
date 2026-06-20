@@ -1,6 +1,9 @@
 package sema
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/Abhinand20/agentFlow/internal/diag"
@@ -58,5 +61,28 @@ agent a { model: sonnet }`
 	}
 	if n != 2 {
 		t.Fatalf("Order should record both duplicates, got %d", n)
+	}
+}
+
+func TestResolveNeverPanicsOnTruncatedInput(t *testing.T) {
+	_, file, _, _ := runtime.Caller(0)
+	dir := filepath.Join(filepath.Dir(file), "..", "..", "examples")
+	src, err := os.ReadFile(filepath.Join(dir, "review.af"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 1; i <= len(src); i++ {
+		func() {
+			defer func() {
+				if recover() != nil {
+					t.Fatalf("panic at prefix %d", i)
+				}
+			}()
+			root, diags := parser.Parse("review.af", string(src[:i]))
+			if diags.HasErrors() || root == nil {
+				return
+			}
+			Resolve(root, dir)
+		}()
 	}
 }
