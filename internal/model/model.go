@@ -123,6 +123,7 @@ type Flow struct {
 	ReturnExplicit bool
 	Params         []Param
 	Body           []Step
+	Raw            map[string]*ast.Value `json:"Raw,omitempty"`
 	Pos            lexer.Position `json:"-"`
 }
 

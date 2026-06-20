@@ -210,12 +210,13 @@ func interpGate(g *model.Gate, fields []*ast.Field, diags *diag.Diagnostics) {
 		case "run":
 			g.Run = strVal(f.Value)
 		case "on-fail":
-			action, ok := parseOnFail(scalarVal(f.Value))
+			val := scalarVal(f.Value)
+			action, ok := parseOnFail(val)
 			if !ok {
 				diags.Add(diag.Diagnostic{
 					Code:     "AF134",
 					Severity: diag.Error,
-					Msg:      "bounce-back is not valid; use retry or goto with on-fail-target",
+					Msg:      onFailErrorMsg(val),
 					Pos:      f.Pos,
 				})
 			} else {
@@ -254,7 +255,7 @@ func interpGate(g *model.Gate, fields []*ast.Field, diags *diag.Diagnostics) {
 			diags.Add(diag.Diagnostic{
 				Code:     "AF135",
 				Severity: diag.Error,
-				Msg:      "on-fail: retry requires on-fail-target",
+				Msg:      "on-fail: retry/goto require on-fail-target",
 				Pos:      g.Pos,
 			})
 		}
@@ -268,6 +269,13 @@ func interpGate(g *model.Gate, fields []*ast.Field, diags *diag.Diagnostics) {
 			})
 		}
 	}
+}
+
+func onFailErrorMsg(value string) string {
+	if value == "bounce-back" {
+		return "bounce-back is not valid; use retry or goto with on-fail-target"
+	}
+	return "invalid on-fail action " + value + "; expected halt, retry, goto, or enter-loop"
 }
 
 func parseOnFail(s string) (model.GateFailAction, bool) {
@@ -321,6 +329,17 @@ func interpFlow(fl *model.Flow, fd *ast.Flow, diags *diag.Diagnostics) {
 			case "return":
 				fl.Return = scalarVal(f.Value)
 				fl.ReturnExplicit = true
+			default:
+				diags.Add(diag.Diagnostic{
+					Code:     "AF120",
+					Severity: diag.Warning,
+					Msg:      "unknown field " + f.Key,
+					Pos:      f.Pos,
+				})
+				if fl.Raw == nil {
+					fl.Raw = make(map[string]*ast.Value)
+				}
+				fl.Raw[f.Key] = f.Value
 			}
 			continue
 		}

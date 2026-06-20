@@ -55,8 +55,21 @@ func TestPromptEscapesTreeReason(t *testing.T) {
 func TestPromptMissingReason(t *testing.T) {
 	dir := t.TempDir()
 	prog, _ := resolveDir(t, dir, `agent a { model: opus prompt-file: "nope.md" }`)
-	if prog.Agents["a"].Resolution.Reason != "missing" {
-		t.Fatalf("reason = %q", prog.Agents["a"].Resolution.Reason)
+	ag := prog.Agents["a"]
+	if ag.Resolution.Reason != "missing" {
+		t.Fatalf("reason = %q", ag.Resolution.Reason)
+	}
+	if ag.Prompt != "" {
+		t.Fatalf("Prompt should be cleared on failed file read, got %q", ag.Prompt)
+	}
+}
+
+func TestPromptMdPathMissingClearsPrompt(t *testing.T) {
+	dir := t.TempDir()
+	prog, _ := resolveDir(t, dir, `agent a { model: opus prompt: "nope.md" }`)
+	ag := prog.Agents["a"]
+	if ag.Resolution.Reason != "missing" || ag.Prompt != "" {
+		t.Fatalf("agent = %#v", ag)
 	}
 }
 

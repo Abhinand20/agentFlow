@@ -20,6 +20,12 @@ func resolvePrompts(prog *model.Program, srcDir string, diags *diag.Diagnostics)
 	}
 }
 
+// resolveAgentPrompt loads file-backed prompts at compile time.
+//
+// M6 render must consult Agent.Resolution before using Agent.Prompt:
+//   - Resolution.OK == true → Prompt is final text (inline or resolved file).
+//   - Resolution.Reason == "conflict" → prompt-file won over inline prompt; M4 emits AF211.
+//   - any other Reason → resolution failed; Prompt is cleared (not a usable path stub).
 func resolveAgentPrompt(ag *model.Agent, srcDir string) {
 	if ag == nil {
 		return
@@ -47,6 +53,8 @@ func resolveAgentPrompt(ag *model.Agent, srcDir string) {
 func readPromptFile(ag *model.Agent, path, srcDir string) {
 	ag.PromptPath = path
 	ag.Resolution.Path = path
+	ag.Prompt = ""
+	ag.PromptFromFile = false
 
 	if filepath.IsAbs(path) || isWindowsDrive(path) {
 		ag.Resolution.Reason = "absolute"

@@ -27,6 +27,18 @@ entry flow f { x }`)
 	}
 }
 
+func TestFlowUnknownFieldWarns_AF120(t *testing.T) {
+	prog, diags := resolveSrc(t, `use a { kind: model-provider models: [s] }
+agent x { model: s }
+entry flow f { foo: bar x }`)
+	if !hasCode(diags, "AF120") {
+		t.Fatalf("want AF120, got %#v", diags)
+	}
+	if prog.Flows["f"].Raw["foo"] == nil {
+		t.Fatalf("unknown flow field must be retained in Raw")
+	}
+}
+
 func TestOnOnNonEntryWarns_AF137(t *testing.T) {
 	_, diags := resolveSrc(t, `use a { kind: model-provider models: [s] }
 agent x { model: s }

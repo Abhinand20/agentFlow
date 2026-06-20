@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Abhinand20/agentFlow/internal/model"
@@ -29,10 +30,34 @@ func TestGateBounceBack_AF134(t *testing.T) {
 	if !hasCode(diags, "AF134") {
 		t.Fatalf("want AF134, got %#v", diags)
 	}
+	for _, d := range diags {
+		if d.Code == "AF134" && !strings.Contains(d.Msg, "bounce-back") {
+			t.Fatalf("want bounce-back message, got %q", d.Msg)
+		}
+	}
+}
+
+func TestGateInvalidOnFail_AF134(t *testing.T) {
+	_, diags := resolveSrc(t, `gate q { run: "t.sh" on-fail: explode }`)
+	if !hasCode(diags, "AF134") {
+		t.Fatalf("want AF134, got %#v", diags)
+	}
+	for _, d := range diags {
+		if d.Code == "AF134" && !strings.Contains(d.Msg, "invalid on-fail action") {
+			t.Fatalf("want generic invalid message, got %q", d.Msg)
+		}
+	}
 }
 
 func TestGateRetryNeedsTarget_AF135(t *testing.T) {
 	_, diags := resolveSrc(t, `gate q { run: "t.sh" on-fail: retry }`)
+	if !hasCode(diags, "AF135") {
+		t.Fatalf("want AF135, got %#v", diags)
+	}
+}
+
+func TestGateGotoNeedsTarget_AF135(t *testing.T) {
+	_, diags := resolveSrc(t, `gate q { run: "t.sh" on-fail: goto }`)
 	if !hasCode(diags, "AF135") {
 		t.Fatalf("want AF135, got %#v", diags)
 	}
