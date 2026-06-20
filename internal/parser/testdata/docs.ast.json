@@ -1,0 +1,224 @@
+{
+  "Decls": [
+    {
+      "Use": {
+        "Name": {
+          "Parts": [
+            "anthropic"
+          ]
+        },
+        "Alias": null,
+        "Fields": [
+          {
+            "Key": "kind",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "model-provider"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "models",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "opus"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "sonnet"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "haiku"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "outline",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "haiku"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "prompts/outline.md",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "draft",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "sonnet"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt-file",
+            "Value": {
+              "Bool": null,
+              "Str": "prompts/draft.md",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": {
+        "Entry": true,
+        "Name": "docs",
+        "Params": null,
+        "Items": [
+          {
+            "Field": {
+              "Key": "on",
+              "Value": {
+                "Bool": null,
+                "Str": "/docs",
+                "Num": null,
+                "List": null,
+                "Ref": null
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "in",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Feature"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": null,
+              "Branch": null,
+              "Loop": null,
+              "Repeat": null,
+              "Chain": {
+                "Atoms": [
+                  {
+                    "Name": {
+                      "Parts": [
+                        "outline"
+                      ]
+                    },
+                    "Args": null,
+                    "Block": null,
+                    "Alias": null
+                  },
+                  {
+                    "Name": {
+                      "Parts": [
+                        "draft"
+                      ]
+                    },
+                    "Args": null,
+                    "Block": null,
+                    "Alias": null
+                  }
+                ],
+                "Attr": null
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

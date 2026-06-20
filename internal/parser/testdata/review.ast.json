@@ -1,0 +1,1095 @@
+{
+  "Decls": [
+    {
+      "Use": {
+        "Name": {
+          "Parts": [
+            "anthropic"
+          ]
+        },
+        "Alias": null,
+        "Fields": [
+          {
+            "Key": "kind",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "model-provider"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "models",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "opus"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "sonnet"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "haiku"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": {
+        "Name": {
+          "Parts": [
+            "github"
+          ]
+        },
+        "Alias": null,
+        "Fields": [
+          {
+            "Key": "kind",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "mcp"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "transport",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "stdio"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "command",
+            "Value": {
+              "Bool": null,
+              "Str": "npx",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          },
+          {
+            "Key": "args",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": "-y",
+                    "Num": null,
+                    "Ref": null
+                  },
+                  {
+                    "Bool": null,
+                    "Str": "@modelcontextprotocol/server-github",
+                    "Num": null,
+                    "Ref": null
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          },
+          {
+            "Key": "tools",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "get_pr"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "create_pr"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": {
+        "Name": "Verdict",
+        "Values": [
+          "approve",
+          "revise",
+          "reject"
+        ]
+      },
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": {
+        "Name": "Decision",
+        "Values": [
+          "shipped",
+          "rejected"
+        ]
+      },
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "build",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "sonnet"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "tools",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "github",
+                        "get_pr"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Implement the change.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "lint",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "haiku"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Report lint findings.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "security",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "haiku"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Report security findings.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "style",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "haiku"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Report style findings.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "reviewer",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "opus"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "out",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "Verdict"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt-file",
+            "Value": {
+              "Bool": null,
+              "Str": "prompts/reviewer.md",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "deploy",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "sonnet"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "out",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "Decision"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "tools",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "Ref": {
+                      "Parts": [
+                        "github",
+                        "create_pr"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Open the PR and report shipped.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "notify_author",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "haiku"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "out",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "Decision"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Tell the author the change was rejected.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": null,
+      "Gate": {
+        "Name": "quality",
+        "Fields": [
+          {
+            "Key": "run",
+            "Value": {
+              "Bool": null,
+              "Str": "scripts/test.sh",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          },
+          {
+            "Key": "on-fail",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "retry"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "on-fail-target",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "build"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "behavior",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "blocking"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "retry",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": 2,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": {
+        "Entry": false,
+        "Name": "code_review",
+        "Params": null,
+        "Items": [
+          {
+            "Field": {
+              "Key": "in",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Ticket"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "out",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Verdict"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "return",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "review"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": null,
+              "Branch": null,
+              "Loop": null,
+              "Repeat": null,
+              "Chain": {
+                "Atoms": [
+                  {
+                    "Name": {
+                      "Parts": [
+                        "build"
+                      ]
+                    },
+                    "Args": null,
+                    "Block": null,
+                    "Alias": null
+                  }
+                ],
+                "Attr": null
+              }
+            }
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": null,
+              "Branch": null,
+              "Loop": null,
+              "Repeat": null,
+              "Chain": {
+                "Atoms": [
+                  {
+                    "Name": {
+                      "Parts": [
+                        "quality"
+                      ]
+                    },
+                    "Args": null,
+                    "Block": null,
+                    "Alias": null
+                  }
+                ],
+                "Attr": null
+              }
+            }
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": {
+                "Each": null,
+                "Body": [
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "lint"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  },
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "security"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  },
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "style"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  }
+                ],
+                "Gather": {
+                  "Name": {
+                    "Parts": [
+                      "reviewer"
+                    ]
+                  },
+                  "Args": null,
+                  "Block": null,
+                  "Alias": "review"
+                }
+              },
+              "Branch": null,
+              "Loop": null,
+              "Repeat": null,
+              "Chain": null
+            }
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": null,
+              "Branch": null,
+              "Loop": {
+                "Cond": {
+                  "Value": {
+                    "It": false,
+                    "Name": {
+                      "Parts": [
+                        "review"
+                      ]
+                    }
+                  },
+                  "Op": "!=",
+                  "Enum": "revise"
+                },
+                "Max": 3,
+                "Body": [
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "build"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  },
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "quality"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  },
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "reviewer"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": "review"
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  }
+                ]
+              },
+              "Repeat": null,
+              "Chain": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": {
+        "Entry": true,
+        "Name": "ship",
+        "Params": null,
+        "Items": [
+          {
+            "Field": {
+              "Key": "on",
+              "Value": {
+                "Bool": null,
+                "Str": "/ship",
+                "Num": null,
+                "List": null,
+                "Ref": null
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "in",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Ticket"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "out",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Decision"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": null,
+              "Branch": null,
+              "Loop": null,
+              "Repeat": null,
+              "Chain": {
+                "Atoms": [
+                  {
+                    "Name": {
+                      "Parts": [
+                        "code_review"
+                      ]
+                    },
+                    "Args": null,
+                    "Block": null,
+                    "Alias": null
+                  }
+                ],
+                "Attr": null
+              }
+            }
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": null,
+              "Branch": {
+                "Value": {
+                  "It": false,
+                  "Name": {
+                    "Parts": [
+                      "code_review"
+                    ]
+                  }
+                },
+                "Cases": [
+                  {
+                    "Values": [
+                      "approve"
+                    ],
+                    "Step": {
+                      "Parallel": null,
+                      "Branch": null,
+                      "Loop": null,
+                      "Repeat": null,
+                      "Chain": {
+                        "Atoms": [
+                          {
+                            "Name": {
+                              "Parts": [
+                                "deploy"
+                              ]
+                            },
+                            "Args": null,
+                            "Block": null,
+                            "Alias": null
+                          }
+                        ],
+                        "Attr": null
+                      }
+                    }
+                  },
+                  {
+                    "Values": [
+                      "revise"
+                    ],
+                    "Step": {
+                      "Parallel": null,
+                      "Branch": null,
+                      "Loop": null,
+                      "Repeat": null,
+                      "Chain": {
+                        "Atoms": [
+                          {
+                            "Name": {
+                              "Parts": [
+                                "notify_author"
+                              ]
+                            },
+                            "Args": null,
+                            "Block": null,
+                            "Alias": null
+                          }
+                        ],
+                        "Attr": null
+                      }
+                    }
+                  },
+                  {
+                    "Values": [
+                      "reject"
+                    ],
+                    "Step": {
+                      "Parallel": null,
+                      "Branch": null,
+                      "Loop": null,
+                      "Repeat": null,
+                      "Chain": {
+                        "Atoms": [
+                          {
+                            "Name": {
+                              "Parts": [
+                                "notify_author"
+                              ]
+                            },
+                            "Args": null,
+                            "Block": null,
+                            "Alias": null
+                          }
+                        ],
+                        "Attr": null
+                      }
+                    }
+                  }
+                ]
+              },
+              "Loop": null,
+              "Repeat": null,
+              "Chain": null
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
