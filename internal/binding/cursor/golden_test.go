@@ -13,7 +13,14 @@ var update = flag.Bool("update", false, "rewrite golden FS snapshots")
 
 func TestGoldenFSReview(t *testing.T) {
 	p := loadReviewIR(t)
-	fs, _ := cursor.Binding().Emit(p)
+	fs, diags := cursor.Binding().Emit(p)
+
+	got := codes(diags)
+	for _, code := range []string{"AF300", "AF301", "AF302", "AF303"} {
+		if got[code] == 0 {
+			t.Fatalf("expected negotiation %s alongside golden FS, got %v", code, got)
+		}
+	}
 
 	for _, path := range fs.Paths() {
 		content, _ := fs.Get(path)

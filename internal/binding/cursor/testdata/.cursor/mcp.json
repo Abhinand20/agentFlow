@@ -5,7 +5,8 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-github"
-      ]
+      ],
+      "type": "stdio"
     }
   }
 }

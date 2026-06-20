@@ -3,6 +3,8 @@ description: "AgentFlow agent \"notify_author\" instructions"
 alwaysApply: false
 ---
 
+<!-- agentflow: model=haiku -->
+
 Tell the author the change was rejected.
 
 When you have finished, end your reply with exactly one fenced block in this form

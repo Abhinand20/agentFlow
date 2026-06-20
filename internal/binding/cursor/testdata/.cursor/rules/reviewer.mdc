@@ -3,6 +3,8 @@ description: "AgentFlow agent \"reviewer\" instructions"
 alwaysApply: false
 ---
 
+<!-- agentflow: model=opus -->
+
 Review the implementation, test results, and specialist feedback.
 
 Return one of:

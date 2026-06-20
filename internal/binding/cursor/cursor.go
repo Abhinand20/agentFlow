@@ -29,19 +29,25 @@ func (cursorBinding) Name() string { return "cursor" }
 func (c cursorBinding) Emit(p ir.Program) (*emit.FS, diag.Diagnostics) {
 	fs := emit.NewFS()
 	v := Vocabulary()
-	diags := Negotiate(p)
+	caps := c.Capabilities()
+	var diags diag.Diagnostics
+	diags.Add(Negotiate(p, caps)...)
 
 	for _, agent := range sortedAgents(p.Agents) {
 		doc := render.AgentDocument(p, agent, v)
 		path := fmt.Sprintf(".cursor/rules/%s.mdc", agent.Name)
-		fs.Write(path, []byte(formatRuleMDC(agent, doc.Body)))
+		content, agentDiags := formatRuleMDC(agent, doc)
+		diags.Add(agentDiags...)
+		fs.Write(path, []byte(content))
 	}
 
 	cmdDoc := render.RunbookDocument(p, v)
 	cmdName := commandBasename(p.Entry.Trigger)
-	fs.Write(fmt.Sprintf(".cursor/commands/%s.md", cmdName), []byte(cmdDoc.Body))
+	fs.Write(fmt.Sprintf(".cursor/commands/%s.md", cmdName), []byte(formatCommandMD(p, cmdDoc)))
 
-	if mcpJSON := formatMCPJSON(p.Capabilities); len(mcpJSON) > 0 {
+	mcpJSON, mcpDiags := formatMCPJSON(p.Capabilities)
+	diags.Add(mcpDiags...)
+	if len(mcpJSON) > 0 {
 		fs.Write(".cursor/mcp.json", mcpJSON)
 	}
 
@@ -65,19 +71,81 @@ func commandBasename(trigger string) string {
 	return trigger
 }
 
-func formatRuleMDC(agent ir.Agent, body string) string {
+func formatRuleMDC(agent ir.Agent, doc render.Document) (string, diag.Diagnostics) {
 	desc := agent.Description
+	tools := make([]string, 0)
+	modelAlias := ""
+	for _, f := range doc.Frontmatter {
+		switch f.Key {
+		case "description":
+			if f.Value != "" {
+				desc = f.Value
+			}
+		case "model-alias":
+			modelAlias = f.Value
+		case "tool":
+			tools = append(tools, f.Value)
+		}
+	}
 	if desc == "" {
 		desc = fmt.Sprintf("AgentFlow agent %q instructions", agent.Name)
 	}
+
 	var b strings.Builder
 	b.WriteString("---\n")
 	b.WriteString("description: ")
 	b.WriteString(strconvQuoteYAML(desc))
 	b.WriteString("\nalwaysApply: false\n")
-	b.WriteString("---\n\n")
-	b.WriteString(body)
-	if body != "" && !strings.HasSuffix(body, "\n") {
+	b.WriteString("---\n")
+
+	meta := agentflowMetaComment(modelAlias, tools)
+	if meta != "" {
+		b.WriteString("\n")
+		b.WriteString(meta)
+		b.WriteString("\n")
+	}
+	if doc.Body != "" {
+		b.WriteString("\n")
+		b.WriteString(doc.Body)
+		if !strings.HasSuffix(doc.Body, "\n") {
+			b.WriteByte('\n')
+		}
+	}
+
+	return b.String(), agentMappingDiags(agent)
+}
+
+func agentflowMetaComment(modelAlias string, tools []string) string {
+	var parts []string
+	if modelAlias != "" {
+		parts = append(parts, "model="+modelAlias)
+	}
+	if len(tools) > 0 {
+		parts = append(parts, "tools="+strings.Join(tools, ","))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "<!-- agentflow: " + strings.Join(parts, " ") + " -->"
+}
+
+func formatCommandMD(p ir.Program, doc render.Document) string {
+	var meta []string
+	for _, f := range doc.Frontmatter {
+		meta = append(meta, fmt.Sprintf("%s=%s", f.Key, f.Value))
+	}
+	if p.Entry.InType != "" {
+		meta = append(meta, "in="+p.Entry.InType)
+	}
+
+	var b strings.Builder
+	if len(meta) > 0 {
+		b.WriteString("<!-- agentflow: ")
+		b.WriteString(strings.Join(meta, " "))
+		b.WriteString(" -->\n\n")
+	}
+	b.WriteString(doc.Body)
+	if doc.Body != "" && !strings.HasSuffix(doc.Body, "\n") {
 		b.WriteByte('\n')
 	}
 	return b.String()
@@ -100,23 +168,24 @@ type mcpServer struct {
 	Type    string   `json:"type,omitempty"`
 }
 
-func formatMCPJSON(caps []ir.Capability) []byte {
+func formatMCPJSON(caps []ir.Capability) ([]byte, diag.Diagnostics) {
 	servers := make(map[string]mcpServer)
 	for _, c := range caps {
 		if c.Kind != "mcp" {
 			continue
 		}
-		srv := mcpServer{
+		transport := c.Transport
+		if transport == "" {
+			transport = "stdio"
+		}
+		servers[c.Name] = mcpServer{
 			Command: c.Command,
 			Args:    append([]string(nil), c.Args...),
+			Type:    transport,
 		}
-		if c.Transport != "" {
-			srv.Type = c.Transport
-		}
-		servers[c.Name] = srv
 	}
 	if len(servers) == 0 {
-		return nil
+		return nil, nil
 	}
 	names := make([]string, 0, len(servers))
 	for name := range servers {
@@ -129,7 +198,7 @@ func formatMCPJSON(caps []ir.Capability) []byte {
 	}
 	data, err := json.MarshalIndent(mcpConfig{MCPServers: ordered}, "", "  ")
 	if err != nil {
-		return nil
+		return nil, diag.Diagnostics{warn("AF308", fmt.Sprintf("failed to encode .cursor/mcp.json: %v", err))}
 	}
-	return append(data, '\n')
+	return append(data, '\n'), nil
 }

@@ -51,6 +51,7 @@ func TestCapabilities(t *testing.T) {
 		"parallel-spawn",
 		"blocking-gate",
 		"output-parse",
+		"loop-enforcement",
 	}
 	for _, name := range wantFalse {
 		if caps[cursor.Capability(name)] {
@@ -61,13 +62,17 @@ func TestCapabilities(t *testing.T) {
 
 func TestNegotiateReview(t *testing.T) {
 	p := loadReviewIR(t)
-	diags := cursor.Negotiate(p)
+	b := cursor.Binding()
+	diags := cursor.Negotiate(p, b.Capabilities())
 	got := codes(diags)
 
-	for _, code := range []string{"AF300", "AF301", "AF302", "AF303", "AF304"} {
+	for _, code := range []string{"AF300", "AF301", "AF302", "AF303"} {
 		if got[code] == 0 {
 			t.Fatalf("expected %s in review.af negotiation, got %v", code, got)
 		}
+	}
+	if got["AF304"] != 0 {
+		t.Fatalf("AF304 is a static binding caveat, not per-program: %v", got)
 	}
 
 	for _, d := range diags {
@@ -92,13 +97,13 @@ func TestNegotiateMinimalNoParallel(t *testing.T) {
 			},
 		},
 	}
-	diags := cursor.Negotiate(p)
+	diags := cursor.Negotiate(p, cursor.Binding().Capabilities())
 	got := codes(diags)
 	if got["AF300"] != 0 {
 		t.Fatalf("unexpected AF300: %v", got)
 	}
-	if got["AF304"] == 0 {
-		t.Fatalf("expected AF304 for agents-as-rules")
+	if got["AF304"] != 0 {
+		t.Fatalf("unexpected AF304: %v", got)
 	}
 }
 
@@ -119,9 +124,32 @@ func TestNegotiateBlockingGateOnly(t *testing.T) {
 			},
 		},
 	}
-	diags := cursor.Negotiate(p)
+	diags := cursor.Negotiate(p, cursor.Binding().Capabilities())
 	got := codes(diags)
 	if got["AF303"] != 1 {
 		t.Fatalf("expected one AF303, got %v", got)
+	}
+}
+
+func TestNegotiateDerivedFromCapabilities(t *testing.T) {
+	p := ir.Program{
+		Flow: ir.Flow{
+			Root: ir.Node{Kind: ir.NodeParallel, Branches: []ir.Node{
+				{Kind: ir.NodeStep, Step: &ir.StepRef{Decl: "lint", Kind: "agent"}},
+			}},
+		},
+	}
+	allCaps := cursor.Binding().Capabilities()
+	if len(cursor.Negotiate(p, allCaps)) == 0 {
+		t.Fatal("expected AF300 when parallel-spawn unsupported")
+	}
+
+	supported := map[cursor.Capability]bool{}
+	for k, v := range allCaps {
+		supported[k] = v
+	}
+	supported[cursor.CapParallelSpawn] = true
+	if len(cursor.Negotiate(p, supported)) != 0 {
+		t.Fatal("expected no AF300 when parallel-spawn capability enabled")
 	}
 }

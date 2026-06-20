@@ -3,4 +3,6 @@ description: "AgentFlow agent \"style\" instructions"
 alwaysApply: false
 ---
 
+<!-- agentflow: model=haiku -->
+
 Report style findings.

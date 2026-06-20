@@ -19,9 +19,13 @@ func TestCursorVocabulary(t *testing.T) {
 
 		got = v.InvokeAgent(render.AgentView{
 			Decl:         "build",
+			ControlLabel: "code_review.build",
 			UsesFlowArg:  true,
 			PrevProducer: "ticket",
 		})
+		if !strings.Contains(got, "step `code_review.build`") {
+			t.Fatalf("InvokeAgent control label: %q", got)
+		}
 		if !strings.Contains(got, "$1") {
 			t.Fatalf("InvokeAgent flow arg: %q", got)
 		}

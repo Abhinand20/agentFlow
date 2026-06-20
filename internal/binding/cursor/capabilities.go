@@ -19,14 +19,53 @@ const (
 	CapParallelSpawn  Capability = "parallel-spawn"
 	CapBlockingGate   Capability = "blocking-gate"
 	CapOutputParse    Capability = "output-parse"
+	CapLoopEnforce    Capability = "loop-enforcement"
 )
+
+// StaticCaveat documents a binding-level limitation not tied to a specific program.
+const StaticCaveat = "Cursor agents are emitted as .cursor/rules, not native subagents (see CapNamedSubagents)"
 
 type needs struct {
 	parallel    bool
 	loopBound   bool
 	outputParse bool
 	blocking    []string
-	hasAgents   bool
+}
+
+type negotiationRule struct {
+	cap     Capability
+	need    func(needs) bool
+	code    string
+	message func(needs) string
+}
+
+func negotiationRules() []negotiationRule {
+	return []negotiationRule{
+		{
+			cap:  CapParallelSpawn,
+			need: func(n needs) bool { return n.parallel },
+			code: "AF300",
+			message: func(needs) string {
+				return "parallel spawn is sequential on cursor"
+			},
+		},
+		{
+			cap:  CapLoopEnforce,
+			need: func(n needs) bool { return n.loopBound },
+			code: "AF301",
+			message: func(needs) string {
+				return "loop bound is advisory; host self-counts"
+			},
+		},
+		{
+			cap:  CapOutputParse,
+			need: func(n needs) bool { return n.outputParse },
+			code: "AF302",
+			message: func(needs) string {
+				return "output parsing is advisory"
+			},
+		},
+	}
 }
 
 func (c cursorBinding) Capabilities() map[binding.Capability]bool {
@@ -38,19 +77,17 @@ func (c cursorBinding) Capabilities() map[binding.Capability]bool {
 		CapParallelSpawn:  false,
 		CapBlockingGate:   false,
 		CapOutputParse:    false,
+		CapLoopEnforce:    false,
 	}
 }
 
-// Negotiate diffs program needs vs Cursor capabilities and returns AF3xx warnings.
-func Negotiate(p ir.Program) diag.Diagnostics {
-	return negotiateNeeds(scanNeeds(p))
+// Negotiate diffs program needs vs binding capabilities and returns AF3xx warnings.
+func Negotiate(p ir.Program, caps map[binding.Capability]bool) diag.Diagnostics {
+	return negotiateNeeds(scanNeeds(p), caps)
 }
 
 func scanNeeds(p ir.Program) needs {
 	var n needs
-	if len(p.Agents) > 0 {
-		n.hasAgents = true
-	}
 	for _, a := range p.Agents {
 		if len(a.OutEnum) > 0 {
 			n.outputParse = true
@@ -97,22 +134,32 @@ func scanNode(n ir.Node, needs *needs) {
 	}
 }
 
-func negotiateNeeds(n needs) diag.Diagnostics {
+func negotiateNeeds(n needs, caps map[binding.Capability]bool) diag.Diagnostics {
 	var out diag.Diagnostics
-	if n.parallel {
-		out.Add(warn("AF300", "parallel spawn is sequential on cursor"))
+	for _, rule := range negotiationRules() {
+		if caps[rule.cap] || !rule.need(n) {
+			continue
+		}
+		out.Add(warn(rule.code, rule.message(n)))
 	}
-	if n.loopBound {
-		out.Add(warn("AF301", "loop bound is advisory; host self-counts"))
+	if !caps[CapBlockingGate] {
+		for _, name := range n.blocking {
+			out.Add(warn("AF303", fmt.Sprintf("gate %q falls back to advisory; cursor hooks deferred", name)))
+		}
 	}
-	if n.outputParse {
-		out.Add(warn("AF302", "output parsing is advisory"))
+	return out
+}
+
+func agentMappingDiags(agent ir.Agent) diag.Diagnostics {
+	var out diag.Diagnostics
+	if agent.Alias != "" {
+		out.Add(warn("AF305", fmt.Sprintf("agent %q model alias %q cannot be enforced in Cursor rules; recorded in rule metadata", agent.Name, agent.Alias)))
 	}
-	for _, name := range n.blocking {
-		out.Add(warn("AF303", fmt.Sprintf("gate %q falls back to advisory; cursor hooks deferred", name)))
+	if len(agent.Tools) > 0 {
+		out.Add(warn("AF306", fmt.Sprintf("agent %q tool refs are metadata-only on Cursor; use .cursor/mcp.json for MCP servers", agent.Name)))
 	}
-	if n.hasAgents {
-		out.Add(warn("AF304", "agents emitted as .cursor/rules, not native subagents"))
+	if agent.Permissions != "" {
+		out.Add(warn("AF307", fmt.Sprintf("agent %q permissions %q cannot map to Cursor rules", agent.Name, agent.Permissions)))
 	}
 	return out
 }

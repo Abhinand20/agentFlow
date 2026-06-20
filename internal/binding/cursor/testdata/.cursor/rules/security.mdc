@@ -3,4 +3,6 @@ description: "AgentFlow agent \"security\" instructions"
 alwaysApply: false
 ---
 
+<!-- agentflow: model=haiku -->
+
 Report security findings.

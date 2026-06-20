@@ -3,4 +3,6 @@ description: "AgentFlow agent \"lint\" instructions"
 alwaysApply: false
 ---
 
+<!-- agentflow: model=haiku -->
+
 Report lint findings.

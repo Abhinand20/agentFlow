@@ -15,9 +15,18 @@ func Vocabulary() render.Vocabulary {
 }
 
 func (cursorVocabulary) InvokeAgent(a render.AgentView) string {
-	s := fmt.Sprintf("Act as the `%s` agent using the instructions in the `%s` rule", a.Decl, a.Decl)
+	ruleRef := a.Decl
+	var s string
+	if a.ControlLabel != "" && a.ControlLabel != a.Decl {
+		s = fmt.Sprintf(
+			"Act as the `%s` agent (step `%s`) using the instructions in the `%s` rule",
+			a.Decl, a.ControlLabel, ruleRef,
+		)
+	} else {
+		s = fmt.Sprintf("Act as the `%s` agent using the instructions in the `%s` rule", a.Decl, ruleRef)
+	}
 	if a.UsesFlowArg {
-		s += fmt.Sprintf(" with %s", cursorVocabulary{}.Arg("input"))
+		s += fmt.Sprintf(" with %s", flowInputArg())
 	}
 	if a.PrevProducer != "" {
 		s += fmt.Sprintf(" using the output from `%s`", a.PrevProducer)
@@ -56,7 +65,12 @@ func (cursorVocabulary) GotoStep(controlLabel string) string {
 	return fmt.Sprintf("Go back to step `%s`.", controlLabel)
 }
 
-func (cursorVocabulary) Arg(name string) string {
-	_ = name
+// Arg returns the Cursor slash-command positional token for flow input.
+// v0.1 maps the opaque entry input to $1 regardless of the IR param name.
+func (cursorVocabulary) Arg(_ string) string {
+	return flowInputArg()
+}
+
+func flowInputArg() string {
 	return "$1"
 }

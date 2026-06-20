@@ -3,6 +3,8 @@ description: "AgentFlow agent \"deploy\" instructions"
 alwaysApply: false
 ---
 
+<!-- agentflow: model=sonnet tools=github:create_pr -->
+
 Open the PR and report shipped.
 
 When you have finished, end your reply with exactly one fenced block in this form
