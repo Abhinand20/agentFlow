@@ -88,9 +88,20 @@ func strListVal(v *ast.Value) []string {
 }
 
 func interpType(et *model.EnumType, td *ast.TypeDecl, diags *diag.Diagnostics) {
-	_ = et
-	_ = td
-	_ = diags
+	seen := make(map[string]bool)
+	for _, v := range td.Values {
+		if seen[v] {
+			diags.Add(diag.Diagnostic{
+				Code:     "AF133",
+				Severity: diag.Warning,
+				Msg:      "duplicate enum member " + v,
+				Pos:      td.Pos,
+			})
+			continue
+		}
+		seen[v] = true
+		et.Values = append(et.Values, v)
+	}
 }
 
 func interpAgent(ag *model.Agent, fields []*ast.Field, diags *diag.Diagnostics) {
