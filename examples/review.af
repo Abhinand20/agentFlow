@@ -1,0 +1,96 @@
+# Canonical MVP program (golden fixture)
+# Referenced by spec/grammar.md, plans/, and testdata/.
+
+use anthropic {
+  kind: model-provider
+  models: [opus, sonnet, haiku]
+}
+
+use github {
+  kind: mcp
+  transport: stdio
+  command: "npx"
+  args: ["-y", "@modelcontextprotocol/server-github"]
+  tools: [get_pr, create_pr]
+}
+
+type Verdict = approve | revise | reject
+type Decision = shipped | rejected
+
+agent build {
+  model: sonnet
+  tools: [github.get_pr]
+  prompt: "Implement the change."
+}
+
+agent lint {
+  model: haiku
+  prompt: "Report lint findings."
+}
+
+agent security {
+  model: haiku
+  prompt: "Report security findings."
+}
+
+agent style {
+  model: haiku
+  prompt: "Report style findings."
+}
+
+agent reviewer {
+  model: opus
+  out: Verdict
+  prompt-file: "prompts/reviewer.md"
+}
+
+agent deploy {
+  model: sonnet
+  out: Decision
+  tools: [github.create_pr]
+  prompt: "Open the PR and report shipped."
+}
+
+agent notify_author {
+  model: haiku
+  out: Decision
+  prompt: "Tell the author the change was rejected."
+}
+
+gate quality {
+  run: "scripts/test.sh"
+  on-fail: retry
+  on-fail-target: build
+  behavior: blocking
+  retry: 2
+}
+
+flow code_review {
+  in: Ticket
+  out: Verdict
+  return: review
+  build
+  quality
+  parallel {
+    lint
+    security
+    style
+  } gather reviewer as review
+  loop (until review != revise, max 3) {
+    build
+    quality
+    reviewer as review
+  }
+}
+
+entry flow ship {
+  on: "/ship"
+  in: Ticket
+  out: Decision
+  code_review
+  branch code_review {
+    case approve -> deploy
+    case revise -> notify_author
+    case reject -> notify_author
+  }
+}

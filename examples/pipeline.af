@@ -1,0 +1,33 @@
+# Architecture: Sequential pipeline (Research -> Analyze -> Write -> Edit)
+# Demonstrates: `->` chaining, default `return:` (terminal producer), inferred `out:`.
+
+use anthropic {
+  kind: model-provider
+  models: [opus, sonnet, haiku]
+}
+
+agent research {
+  model: sonnet
+  prompt: "Gather credible sources and notes on the topic."
+}
+
+agent analyze {
+  model: sonnet
+  prompt: "Extract the key findings from the research."
+}
+
+agent write {
+  model: sonnet
+  prompt: "Draft the piece from the findings."
+}
+
+agent edit {
+  model: haiku
+  prompt: "Tighten, fix grammar, and proofread the draft."
+}
+
+entry flow content {
+  on: "/write"
+  in: Topic
+  research -> analyze -> write -> edit
+}

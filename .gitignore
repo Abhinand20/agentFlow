@@ -1,0 +1,16 @@
+# Go
+/af
+*.exe
+*.test
+/vendor/
+/coverage.out
+/dist/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets
+.env
+.env.*

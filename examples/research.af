@@ -1,0 +1,42 @@
+# Architecture: Supervisor / worker fan-out (deep-research).
+# Demonstrates: static `parallel { ... } gather`, typed gather agent output.
+# The orchestrator is the supervisor; each worker's brief lives in its prompt.
+
+use anthropic {
+  kind: model-provider
+  models: [opus, sonnet, haiku]
+}
+
+type Report = ready
+
+agent market {
+  model: sonnet
+  prompt: "Analyze market size, growth, and trends for the topic."
+}
+
+agent competitor {
+  model: sonnet
+  prompt: "Identify the main competitors and their positioning."
+}
+
+agent financial {
+  model: sonnet
+  prompt: "Assess revenue model, margins, and financial risks."
+}
+
+agent synthesize {
+  model: opus
+  out: Report
+  prompt: "Combine the market, competitor, and financial analyses into one report. Report `ready` when complete."
+}
+
+entry flow research {
+  on: "/research"
+  in: Topic
+  out: Report
+  parallel {
+    market
+    competitor
+    financial
+  } gather synthesize as report
+}

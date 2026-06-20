@@ -1,0 +1,33 @@
+# Architecture: Generator / critic refinement (write SQL, review, refine).
+# Demonstrates: `repeat { ... } until` (do-while) with no prologue duplication,
+# explicit `return:` because the terminal step (critic) is not the answer (draft),
+# and critic feedback flowing to the next iteration as sequential text context.
+
+use anthropic {
+  kind: model-provider
+  models: [opus, sonnet, haiku]
+}
+
+type Verdict = pass | revise
+
+agent generate {
+  model: sonnet
+  prompt: "Write or refine the SQL for the request. If reviewer feedback is present above, address it."
+}
+
+agent critic {
+  model: opus
+  out: Verdict
+  prompt: "Check the SQL for correctness and optimization. Give concrete feedback, then report `pass` or `revise`."
+}
+
+entry flow sql {
+  on: "/sql"
+  in: Spec
+  out: text
+  return: draft
+  repeat {
+    generate as draft
+    critic as verdict
+  } until (verdict == pass, max 3)
+}
