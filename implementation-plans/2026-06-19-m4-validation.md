@@ -4,7 +4,7 @@
 - **Milestone:** M4
 - **Design spec:** [plans/mvp/04-validation.md](../plans/mvp/04-validation.md)
 - **Language spec:** [§4](../spec/grammar.md#4-execution-and-data-model), [§13.1](../spec/grammar.md#131-validate-v01-rule-set)
-- **Status:** Planned
+- **Status:** Done
 - **Depends on:** M2 (`model.Program`), M3 (`flowgraph.Resolved`)
 - **Blocks:** M5 (IR is only built from a valid program), M8 (`af validate`)
 
@@ -20,8 +20,12 @@ pipeline (M8) treats `HasErrors()` as the gate for proceeding to IR.
 
 ## 2. Deliverables
 
-- `internal/sema/validate.go` — `Validate(prog *model.Program, res *flowgraph.Resolved) diag.Diagnostics`.
-- `internal/sema/rules/` — one file per rule, each `func(ctx) diag.Diagnostics`.
+- `internal/validate/validate.go` — `Validate(prog *model.Program, res *flowgraph.Resolved) diag.Diagnostics`.
+- `internal/validate/af*.go` — one file per rule group.
+
+> **Package note.** Validation lives in `internal/validate` (not `internal/sema`) to avoid
+> an import cycle: `flowgraph` tests import `sema`, and validation needs both `model` and
+> `flowgraph.Resolved`.
 - Per-rule fixtures + tests under `internal/sema/testdata/validate/`.
 
 ## 3. Architecture
