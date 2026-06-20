@@ -4,7 +4,7 @@
 - **Milestone:** M3
 - **Design spec:** [plans/mvp/03-inline-and-normalize.md](../plans/mvp/03-inline-and-normalize.md)
 - **Language spec:** [§4](../spec/grammar.md#4-execution-and-data-model), [§13](../spec/grammar.md#13-resolution-and-lowering)
-- **Status:** Planned
+- **Status:** Done
 - **Depends on:** M2 (`model.Program`)
 - **Blocks:** M4 (validation runs on the resolved graph), M5 (IR), M7 (DOT)
 

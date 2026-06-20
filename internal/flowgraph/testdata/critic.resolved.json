@@ -1,0 +1,83 @@
+{
+  "Entry": "sql",
+  "Tree": {
+    "Kind": 0,
+    "Label": "",
+    "Steps": [
+      {
+        "Kind": 3,
+        "Label": "",
+        "Steps": [
+          {
+            "Kind": 1,
+            "Label": "repeat.generate",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          },
+          {
+            "Kind": 1,
+            "Label": "repeat.critic",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          }
+        ],
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": {
+          "Value": "verdict",
+          "IsIt": false,
+          "Op": "==",
+          "Enum": "pass"
+        },
+        "Max": 3,
+        "DoWhile": true,
+        "Gather": null,
+        "GatherPayload": null
+      }
+    ],
+    "BranchValue": "",
+    "Cases": null,
+    "Cond": null,
+    "Max": null,
+    "DoWhile": false,
+    "Gather": null,
+    "GatherPayload": null
+  },
+  "Instances": {
+    "repeat.critic": {
+      "ControlLabel": "repeat.critic",
+      "ValueLabel": "verdict",
+      "Decl": "critic",
+      "Kind": 0,
+      "OutEnum": [
+        "pass",
+        "revise"
+      ],
+      "Upstream": "repeat.generate",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "repeat.generate": {
+      "ControlLabel": "repeat.generate",
+      "ValueLabel": "draft",
+      "Decl": "generate",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    }
+  }
+}

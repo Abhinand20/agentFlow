@@ -1,0 +1,106 @@
+{
+  "Entry": "content",
+  "Tree": {
+    "Kind": 0,
+    "Label": "",
+    "Steps": [
+      {
+        "Kind": 1,
+        "Label": "research",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      },
+      {
+        "Kind": 1,
+        "Label": "analyze",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      },
+      {
+        "Kind": 1,
+        "Label": "write",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      },
+      {
+        "Kind": 1,
+        "Label": "edit",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      }
+    ],
+    "BranchValue": "",
+    "Cases": null,
+    "Cond": null,
+    "Max": null,
+    "DoWhile": false,
+    "Gather": null,
+    "GatherPayload": null
+  },
+  "Instances": {
+    "analyze": {
+      "ControlLabel": "analyze",
+      "ValueLabel": "analyze",
+      "Decl": "analyze",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "research",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "edit": {
+      "ControlLabel": "edit",
+      "ValueLabel": "edit",
+      "Decl": "edit",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "write",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "research": {
+      "ControlLabel": "research",
+      "ValueLabel": "research",
+      "Decl": "research",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "write": {
+      "ControlLabel": "write",
+      "ValueLabel": "write",
+      "Decl": "write",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "analyze",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    }
+  }
+}
