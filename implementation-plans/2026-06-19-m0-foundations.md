@@ -34,7 +34,7 @@ Shared plumbing: diagnostics, in-memory file set, binding interface, CLI skeleto
 | `6608c02` | internal/diag |
 | `b5d733c` | internal/emit |
 | `c09d1e5` | internal/binding + ir stub |
-| (latest) | cmd/af CLI |
+| `610f540` | cmd/af CLI |
 
 ## Out of scope
 
