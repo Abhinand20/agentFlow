@@ -1,0 +1,366 @@
+{
+  "Entry": "ship",
+  "Tree": {
+    "Kind": 0,
+    "Label": "",
+    "Steps": [
+      {
+        "Kind": 1,
+        "Label": "code_review.build",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      },
+      {
+        "Kind": 1,
+        "Label": "code_review.quality",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      },
+      {
+        "Kind": 4,
+        "Label": "",
+        "Steps": [
+          {
+            "Kind": 1,
+            "Label": "lint",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          },
+          {
+            "Kind": 1,
+            "Label": "security",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          },
+          {
+            "Kind": 1,
+            "Label": "style",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          }
+        ],
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": {
+          "Kind": 1,
+          "Label": "code_review.reviewer",
+          "Steps": null,
+          "BranchValue": "",
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "DoWhile": false,
+          "Gather": null,
+          "GatherPayload": null
+        },
+        "GatherPayload": {
+          "lint": "lint",
+          "security": "security",
+          "style": "style"
+        }
+      },
+      {
+        "Kind": 3,
+        "Label": "",
+        "Steps": [
+          {
+            "Kind": 1,
+            "Label": "code_review.loop.build",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          },
+          {
+            "Kind": 1,
+            "Label": "code_review.loop.quality",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          },
+          {
+            "Kind": 1,
+            "Label": "code_review.loop.reviewer",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          }
+        ],
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": {
+          "Value": "code_review.review",
+          "IsIt": false,
+          "Op": "!=",
+          "Enum": "revise"
+        },
+        "Max": 3,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      },
+      {
+        "Kind": 2,
+        "Label": "",
+        "Steps": null,
+        "BranchValue": "code_review",
+        "Cases": [
+          {
+            "Values": [
+              "approve"
+            ],
+            "Step": {
+              "Kind": 1,
+              "Label": "deploy",
+              "Steps": null,
+              "BranchValue": "",
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "DoWhile": false,
+              "Gather": null,
+              "GatherPayload": null
+            }
+          },
+          {
+            "Values": [
+              "revise"
+            ],
+            "Step": {
+              "Kind": 1,
+              "Label": "notify_author",
+              "Steps": null,
+              "BranchValue": "",
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "DoWhile": false,
+              "Gather": null,
+              "GatherPayload": null
+            }
+          },
+          {
+            "Values": [
+              "reject"
+            ],
+            "Step": {
+              "Kind": 1,
+              "Label": "notify_author",
+              "Steps": null,
+              "BranchValue": "",
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "DoWhile": false,
+              "Gather": null,
+              "GatherPayload": null
+            }
+          }
+        ],
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      }
+    ],
+    "BranchValue": "",
+    "Cases": null,
+    "Cond": null,
+    "Max": null,
+    "DoWhile": false,
+    "Gather": null,
+    "GatherPayload": null
+  },
+  "Instances": {
+    "code_review": {
+      "ControlLabel": "code_review",
+      "ValueLabel": "code_review",
+      "Decl": "code_review",
+      "Kind": 0,
+      "OutEnum": [
+        "approve",
+        "revise",
+        "reject"
+      ],
+      "Upstream": "",
+      "ReturnsFrom": "code_review.reviewer",
+      "GatherPayload": null
+    },
+    "code_review.build": {
+      "ControlLabel": "code_review.build",
+      "ValueLabel": "code_review.build",
+      "Decl": "build",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "code_review.loop.build": {
+      "ControlLabel": "code_review.loop.build",
+      "ValueLabel": "code_review.loop.build",
+      "Decl": "build",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "code_review.reviewer",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "code_review.loop.quality": {
+      "ControlLabel": "code_review.loop.quality",
+      "ValueLabel": "",
+      "Decl": "quality",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "code_review.loop.build",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "code_review.loop.reviewer": {
+      "ControlLabel": "code_review.loop.reviewer",
+      "ValueLabel": "code_review.review",
+      "Decl": "reviewer",
+      "Kind": 0,
+      "OutEnum": [
+        "approve",
+        "revise",
+        "reject"
+      ],
+      "Upstream": "code_review.loop.build",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "code_review.quality": {
+      "ControlLabel": "code_review.quality",
+      "ValueLabel": "",
+      "Decl": "quality",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "code_review.build",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "code_review.reviewer": {
+      "ControlLabel": "code_review.reviewer",
+      "ValueLabel": "code_review.review",
+      "Decl": "reviewer",
+      "Kind": 0,
+      "OutEnum": [
+        "approve",
+        "revise",
+        "reject"
+      ],
+      "Upstream": "code_review.build",
+      "ReturnsFrom": "",
+      "GatherPayload": {
+        "lint": "lint",
+        "security": "security",
+        "style": "style"
+      }
+    },
+    "deploy": {
+      "ControlLabel": "deploy",
+      "ValueLabel": "deploy",
+      "Decl": "deploy",
+      "Kind": 0,
+      "OutEnum": [
+        "shipped",
+        "rejected"
+      ],
+      "Upstream": "code_review.loop.reviewer",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "lint": {
+      "ControlLabel": "lint",
+      "ValueLabel": "lint",
+      "Decl": "lint",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "code_review.build",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "notify_author": {
+      "ControlLabel": "notify_author",
+      "ValueLabel": "notify_author",
+      "Decl": "notify_author",
+      "Kind": 0,
+      "OutEnum": [
+        "shipped",
+        "rejected"
+      ],
+      "Upstream": "code_review.loop.reviewer",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "security": {
+      "ControlLabel": "security",
+      "ValueLabel": "security",
+      "Decl": "security",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "code_review.build",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "style": {
+      "ControlLabel": "style",
+      "ValueLabel": "style",
+      "Decl": "style",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "code_review.build",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    }
+  }
+}

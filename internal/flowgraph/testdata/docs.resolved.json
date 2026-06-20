@@ -1,0 +1,62 @@
+{
+  "Entry": "docs",
+  "Tree": {
+    "Kind": 0,
+    "Label": "",
+    "Steps": [
+      {
+        "Kind": 1,
+        "Label": "outline",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      },
+      {
+        "Kind": 1,
+        "Label": "draft",
+        "Steps": null,
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": null,
+        "GatherPayload": null
+      }
+    ],
+    "BranchValue": "",
+    "Cases": null,
+    "Cond": null,
+    "Max": null,
+    "DoWhile": false,
+    "Gather": null,
+    "GatherPayload": null
+  },
+  "Instances": {
+    "draft": {
+      "ControlLabel": "draft",
+      "ValueLabel": "draft",
+      "Decl": "draft",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "outline",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "outline": {
+      "ControlLabel": "outline",
+      "ValueLabel": "outline",
+      "Decl": "outline",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    }
+  }
+}

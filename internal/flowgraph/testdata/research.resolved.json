@@ -1,0 +1,128 @@
+{
+  "Entry": "research",
+  "Tree": {
+    "Kind": 0,
+    "Label": "",
+    "Steps": [
+      {
+        "Kind": 4,
+        "Label": "",
+        "Steps": [
+          {
+            "Kind": 1,
+            "Label": "market",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          },
+          {
+            "Kind": 1,
+            "Label": "competitor",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          },
+          {
+            "Kind": 1,
+            "Label": "financial",
+            "Steps": null,
+            "BranchValue": "",
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "DoWhile": false,
+            "Gather": null,
+            "GatherPayload": null
+          }
+        ],
+        "BranchValue": "",
+        "Cases": null,
+        "Cond": null,
+        "Max": null,
+        "DoWhile": false,
+        "Gather": {
+          "Kind": 1,
+          "Label": "synthesize",
+          "Steps": null,
+          "BranchValue": "",
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "DoWhile": false,
+          "Gather": null,
+          "GatherPayload": null
+        },
+        "GatherPayload": {
+          "competitor": "competitor",
+          "financial": "financial",
+          "market": "market"
+        }
+      }
+    ],
+    "BranchValue": "",
+    "Cases": null,
+    "Cond": null,
+    "Max": null,
+    "DoWhile": false,
+    "Gather": null,
+    "GatherPayload": null
+  },
+  "Instances": {
+    "competitor": {
+      "ControlLabel": "competitor",
+      "ValueLabel": "competitor",
+      "Decl": "competitor",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "financial": {
+      "ControlLabel": "financial",
+      "ValueLabel": "financial",
+      "Decl": "financial",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "market": {
+      "ControlLabel": "market",
+      "ValueLabel": "market",
+      "Decl": "market",
+      "Kind": 0,
+      "OutEnum": null,
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": null
+    },
+    "synthesize": {
+      "ControlLabel": "synthesize",
+      "ValueLabel": "report",
+      "Decl": "synthesize",
+      "Kind": 0,
+      "OutEnum": [
+        "ready"
+      ],
+      "Upstream": "",
+      "ReturnsFrom": "",
+      "GatherPayload": {
+        "competitor": "competitor",
+        "financial": "financial",
+        "market": "market"
+      }
+    }
+  }
+}
