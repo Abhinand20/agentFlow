@@ -46,42 +46,62 @@ func TestGoldenProtocol(t *testing.T) {
 }
 
 func TestGoldenPromptReviewer(t *testing.T) {
-	p := loadIRFixture("review")
-	a := findAgent(p, "reviewer")
-	v := render.DefaultVocabulary()
-	got := render.AgentPrompt(a, v)
+	p := loadIRFixture(t, "review")
+	a := findAgent(t, p, "reviewer")
+	got := render.AgentPrompt(a)
 	assertGolden(t, "prompt_reviewer.txt", got)
 }
 
 func TestAgentPromptDiskFree(t *testing.T) {
+	p := loadIRFixture(t, "review")
+	a := findAgent(t, p, "reviewer")
+	expected := render.AgentPrompt(a)
+
 	dir := t.TempDir()
-	// No prompt files — only inlined IR text.
-	p := loadIRFixture("review")
-	a := findAgent(p, "reviewer")
-	v := render.DefaultVocabulary()
-	got := render.AgentPrompt(a, v)
-	// Prove identical output without any files in temp dir.
-	_ = dir
-	if !strings.Contains(got, "agentflow-output") {
-		t.Fatal("expected protocol block")
+	fakePath := filepath.Join(dir, "prompts", "reviewer.md")
+	if err := os.MkdirAll(filepath.Dir(fakePath), 0o755); err != nil {
+		t.Fatal(err)
 	}
-	if got != render.AgentPrompt(a, v) {
-		t.Fatal("render should be deterministic")
+	if err := os.WriteFile(fakePath, []byte("WRONG CONTENT FROM DISK"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	origWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(origWd); err != nil {
+			t.Errorf("restore wd: %v", err)
+		}
+	}()
+
+	if err := os.Remove(fakePath); err != nil {
+		t.Fatal(err)
+	}
+
+	got := render.AgentPrompt(a)
+	if got != expected {
+		t.Fatalf("disk-free render mismatch\n--- got ---\n%s\n--- want ---\n%s", got, expected)
+	}
+	if strings.Contains(got, "WRONG CONTENT FROM DISK") {
+		t.Fatal("render read deleted prompt file from disk")
 	}
 }
 
 func TestGoldenRunbookReview(t *testing.T) {
-	p := loadIRFixture("review")
+	p := loadIRFixture(t, "review")
 	v := render.DefaultVocabulary()
-	got := render.Runbook(p, v)
-	assertGolden(t, "runbook_review.txt", got)
+	assertGolden(t, "runbook_review.txt", runbookOrFatal(t, p, v))
 }
 
 func TestGoldenRunbookCriticRepeat(t *testing.T) {
-	p := loadIRFixture("critic")
+	p := loadIRFixture(t, "critic")
 	v := render.DefaultVocabulary()
-	got := render.Runbook(p, v)
-	assertGolden(t, "runbook_critic_repeat.txt", got)
+	assertGolden(t, "runbook_critic_repeat.txt", runbookOrFatal(t, p, v))
 }
 
 func TestGoldenPerConstruct(t *testing.T) {
@@ -95,7 +115,17 @@ func TestGoldenPerConstruct(t *testing.T) {
 				stepAgent("s2", "reviewer", "s1", "code_review.review"),
 			},
 		})
-		assertGolden(t, "construct_seq.txt", render.Runbook(p, v))
+		assertGolden(t, "construct_seq.txt", runbookOrFatal(t, p, v))
+	})
+
+	t.Run("flow_arg", func(t *testing.T) {
+		p := minimalProgram(ir.Node{
+			Kind:  ir.NodeSeq,
+			Steps: []ir.Node{stepAgent("s1", "build", "", "")},
+		})
+		p.Entry.InType = "Ticket"
+		p.Agents[0] = ir.Agent{Name: "build", Prompt: "Build.", In: "Ticket"}
+		assertGolden(t, "construct_flow_arg.txt", runbookOrFatal(t, p, v))
 	})
 
 	t.Run("branch", func(t *testing.T) {
@@ -108,7 +138,7 @@ func TestGoldenPerConstruct(t *testing.T) {
 				{Values: []string{"reject"}, Body: stepAgent("notify", "notify_author", "", "")},
 			},
 		})
-		assertGolden(t, "construct_branch.txt", render.Runbook(p, v))
+		assertGolden(t, "construct_branch.txt", runbookOrFatal(t, p, v))
 	})
 
 	t.Run("loop", func(t *testing.T) {
@@ -124,7 +154,7 @@ func TestGoldenPerConstruct(t *testing.T) {
 				},
 			},
 		})
-		assertGolden(t, "construct_loop.txt", render.Runbook(p, v))
+		assertGolden(t, "construct_loop.txt", runbookOrFatal(t, p, v))
 	})
 
 	t.Run("repeat", func(t *testing.T) {
@@ -138,14 +168,14 @@ func TestGoldenPerConstruct(t *testing.T) {
 				Kind: ir.NodeSeq,
 				Steps: []ir.Node{
 					stepAgent("repeat.generate", "generate", "", ""),
-					stepAgent("repeat.critic", "critic", "repeat.generate", "verdict"),
+					stepAgentWithOutEnum("repeat.critic", "critic", "repeat.generate", "verdict", []string{"pass", "revise"}),
 				},
 			},
 		}, withAgents(
 			ir.Agent{Name: "generate", Prompt: "Generate."},
 			ir.Agent{Name: "critic", Prompt: "Critique.", OutEnum: []string{"pass", "revise"}},
 		))
-		assertGolden(t, "construct_repeat.txt", render.Runbook(p, v))
+		assertGolden(t, "construct_repeat.txt", runbookOrFatal(t, p, v))
 	})
 
 	t.Run("parallel", func(t *testing.T) {
@@ -175,7 +205,7 @@ func TestGoldenPerConstruct(t *testing.T) {
 			ir.Agent{Name: "style", Prompt: "Style."},
 			ir.Agent{Name: "reviewer", Prompt: "Review."},
 		))
-		assertGolden(t, "construct_parallel.txt", render.Runbook(p, v))
+		assertGolden(t, "construct_parallel.txt", runbookOrFatal(t, p, v))
 	})
 
 	for _, onFail := range []string{"halt", "retry", "goto", "enter-loop"} {
@@ -191,16 +221,35 @@ func TestGoldenPerConstruct(t *testing.T) {
 				Kind:  ir.NodeSeq,
 				Steps: []ir.Node{stepGate("quality", "quality")},
 			}, withGates(gate))
-			assertGolden(t, "construct_gate_"+onFail+".txt", render.Runbook(p, v))
+			assertGolden(t, "construct_gate_"+onFail+".txt", runbookOrFatal(t, p, v))
 		})
 	}
 }
 
+func TestRunbookMissingAgent(t *testing.T) {
+	p := minimalProgram(stepAgent("s1", "missing_agent", "", ""))
+	_, err := render.Runbook(p, render.DefaultVocabulary())
+	if err == nil {
+		t.Fatal("expected error for missing agent decl")
+	}
+}
+
+func TestRunbookMissingGate(t *testing.T) {
+	p := minimalProgram(ir.Node{
+		Kind:  ir.NodeSeq,
+		Steps: []ir.Node{stepGate("quality", "quality")},
+	})
+	_, err := render.Runbook(p, render.DefaultVocabulary())
+	if err == nil {
+		t.Fatal("expected error for missing gate decl")
+	}
+}
+
 func TestGoldenAgentDocumentReviewer(t *testing.T) {
-	p := loadIRFixture("review")
-	a := findAgent(p, "reviewer")
+	p := loadIRFixture(t, "review")
+	a := findAgent(t, p, "reviewer")
 	v := render.DefaultVocabulary()
-	got := render.FormatDocument(render.AgentDocument(p, a, v))
+	got := render.FormatDocument(render.AgentDocument(a, v))
 	assertGolden(t, "agent_document_reviewer.txt", got)
 }
 
@@ -209,14 +258,18 @@ func TestForbiddenHostTokens(t *testing.T) {
 	forbidden := []string{".claude", "$ARGUMENTS", "Task tool", "bounce-back"}
 	var corpus strings.Builder
 
-	p := loadIRFixture("review")
-	corpus.WriteString(render.Runbook(p, v))
-	corpus.WriteString(render.AgentPrompt(findAgent(p, "reviewer"), v))
-	corpus.WriteString(render.FormatDocument(render.RunbookDocument(p, v)))
-	corpus.WriteString(render.FormatDocument(render.AgentDocument(p, findAgent(p, "reviewer"), v)))
+	p := loadIRFixture(t, "review")
+	corpus.WriteString(runbookOrFatal(t, p, v))
+	corpus.WriteString(render.AgentPrompt(findAgent(t, p, "reviewer")))
+	doc, err := render.RunbookDocument(p, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	corpus.WriteString(render.FormatDocument(doc))
+	corpus.WriteString(render.FormatDocument(render.AgentDocument(findAgent(t, p, "reviewer"), v)))
 
-	p2 := loadIRFixture("critic")
-	corpus.WriteString(render.Runbook(p2, v))
+	p2 := loadIRFixture(t, "critic")
+	corpus.WriteString(runbookOrFatal(t, p2, v))
 
 	for _, token := range forbidden {
 		if strings.Contains(corpus.String(), token) {
@@ -278,4 +331,10 @@ func stepAgent(controlLabel, decl, prevProducer, valueLabel string) ir.Node {
 			PrevProducer: prevProducer,
 		},
 	}
+}
+
+func stepAgentWithOutEnum(controlLabel, decl, prevProducer, valueLabel string, outEnum []string) ir.Node {
+	n := stepAgent(controlLabel, decl, prevProducer, valueLabel)
+	n.Step.OutEnum = outEnum
+	return n
 }

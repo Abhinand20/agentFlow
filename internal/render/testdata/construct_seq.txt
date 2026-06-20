@@ -1,2 +1,2 @@
 1. Invoke the `build` subagent.
-2. Invoke the `reviewer` subagent using the output from `s1`.
+2. Invoke the `reviewer` subagent using the output from `s1`. Read the last `agentflow-output` block. If it is missing or invalid, re-invoke the agent up to `0` times, then stop the flow. Allowed values: approve, revise, reject.

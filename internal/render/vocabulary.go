@@ -11,7 +11,6 @@ type AgentView struct {
 	Decl         string
 	ControlLabel string
 	In           string
-	OutEnum      []string
 	PrevProducer string
 	UsesFlowArg  bool
 }

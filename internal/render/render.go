@@ -20,7 +20,7 @@ type FMField struct {
 }
 
 // AgentDocument renders one subagent's instruction file body and neutral frontmatter values.
-func AgentDocument(p ir.Program, a ir.Agent, v Vocabulary) Document {
+func AgentDocument(a ir.Agent, v Vocabulary) Document {
 	fm := []FMField{
 		{Key: "name", Value: a.Name},
 	}
@@ -35,12 +35,12 @@ func AgentDocument(p ir.Program, a ir.Agent, v Vocabulary) Document {
 	}
 	return Document{
 		Frontmatter: fm,
-		Body:        AgentPrompt(a, v),
+		Body:        AgentPrompt(a),
 	}
 }
 
 // RunbookDocument renders the entry flow as a numbered runbook (command file body).
-func RunbookDocument(p ir.Program, v Vocabulary) Document {
+func RunbookDocument(p ir.Program, v Vocabulary) (Document, error) {
 	trigger := p.Entry.Trigger
 	if trigger == "" {
 		trigger = p.Flow.Name
@@ -49,10 +49,14 @@ func RunbookDocument(p ir.Program, v Vocabulary) Document {
 		{Key: "trigger", Value: trigger},
 		{Key: "flow", Value: p.Flow.Name},
 	}
+	body, err := Runbook(p, v)
+	if err != nil {
+		return Document{}, err
+	}
 	return Document{
 		Frontmatter: fm,
-		Body:        Runbook(p, v),
-	}
+		Body:        body,
+	}, nil
 }
 
 // FormatDocument renders frontmatter and body for golden comparison.

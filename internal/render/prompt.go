@@ -8,7 +8,7 @@ import (
 
 // AgentPrompt renders an agent's instruction body from resolved IR prompt text.
 // Render never reads the filesystem; file- and inline-sourced prompts are identical.
-func AgentPrompt(a ir.Agent, v Vocabulary) string {
+func AgentPrompt(a ir.Agent) string {
 	body := a.Prompt
 	if len(a.OutEnum) > 0 {
 		proto := OutputProtocol(a.OutEnum, a.Retry)

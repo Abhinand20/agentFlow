@@ -3,6 +3,8 @@ package render
 import (
 	"fmt"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/Abhinand20/agentFlow/internal/ir"
 )
@@ -12,20 +14,30 @@ type runbookCtx struct {
 	v    Vocabulary
 	out  *strings.Builder
 	step int
+	err  error
 }
 
 // Runbook renders the entry flow as a numbered runbook markdown body.
-func Runbook(p ir.Program, v Vocabulary) string {
+func Runbook(p ir.Program, v Vocabulary) (string, error) {
 	ctx := &runbookCtx{p: p, v: v, out: &strings.Builder{}}
 	ctx.renderNode(p.Flow.Root, 0)
-	return strings.TrimRight(ctx.out.String(), "\n")
+	if ctx.err != nil {
+		return "", ctx.err
+	}
+	return strings.TrimRight(ctx.out.String(), "\n"), nil
 }
 
 func (ctx *runbookCtx) renderNode(n ir.Node, indent int) {
+	if ctx.err != nil {
+		return
+	}
 	switch n.Kind {
 	case ir.NodeSeq:
 		for _, child := range n.Steps {
 			ctx.renderNode(child, indent)
+			if ctx.err != nil {
+				return
+			}
 		}
 	case ir.NodeStep:
 		ctx.renderStep(n, indent)
@@ -39,6 +51,8 @@ func (ctx *runbookCtx) renderNode(n ir.Node, indent int) {
 		}
 	case ir.NodeParallel:
 		ctx.renderParallel(n, indent)
+	default:
+		ctx.err = fmt.Errorf("render: unknown node kind %q", n.Kind)
 	}
 }
 
@@ -47,6 +61,9 @@ func (ctx *runbookCtx) indentPrefix(indent int) string {
 }
 
 func (ctx *runbookCtx) renderStep(n ir.Node, indent int) {
+	if ctx.err != nil {
+		return
+	}
 	if n.Step == nil {
 		return
 	}
@@ -63,24 +80,31 @@ func (ctx *runbookCtx) renderStep(n ir.Node, indent int) {
 
 	switch step.Kind {
 	case "agent":
-		agent := ctx.findAgent(step.Decl)
+		agent, err := ctx.findAgent(step.Decl)
+		if err != nil {
+			ctx.err = err
+			return
+		}
 		view := AgentView{
 			Name:         agent.Name,
 			Decl:         step.Decl,
 			ControlLabel: step.ControlLabel,
 			In:           agent.In,
-			OutEnum:      step.OutEnum,
 			PrevProducer: step.PrevProducer,
 			UsesFlowArg:  ctx.usesFlowArg(agent),
 		}
 		ctx.out.WriteString(ctx.v.InvokeAgent(view))
-		if len(step.OutEnum) > 0 {
-			retry := agent.Retry
+		outEnum := stepOutEnum(step, agent)
+		if len(outEnum) > 0 {
 			ctx.out.WriteString(" ")
-			ctx.out.WriteString(ctx.v.ParseOutputProtocol(step.OutEnum, retry))
+			ctx.out.WriteString(ctx.v.ParseOutputProtocol(outEnum, agent.Retry))
 		}
 	case "gate":
-		gate := ctx.findGate(step.Decl)
+		gate, err := ctx.findGate(step.Decl)
+		if err != nil {
+			ctx.err = err
+			return
+		}
 		gv := GateView{
 			Name:         gate.Name,
 			Run:          gate.Run,
@@ -91,8 +115,18 @@ func (ctx *runbookCtx) renderStep(n ir.Node, indent int) {
 		ctx.out.WriteString(ctx.v.RunScript(gv))
 		ctx.out.WriteString(" ")
 		ctx.out.WriteString(ctx.gateOnFailProse(gv))
+	default:
+		ctx.err = fmt.Errorf("render: unknown step kind %q at %q", step.Kind, step.ControlLabel)
+		return
 	}
 	ctx.out.WriteString("\n")
+}
+
+func stepOutEnum(step *ir.StepRef, agent ir.Agent) []string {
+	if len(step.OutEnum) > 0 {
+		return step.OutEnum
+	}
+	return agent.OutEnum
 }
 
 func (ctx *runbookCtx) usesFlowArg(a ir.Agent) bool {
@@ -107,7 +141,7 @@ func (ctx *runbookCtx) gateOnFailProse(g GateView) string {
 	case "halt":
 		return "If the gate fails, stop the flow and report failure."
 	case "retry":
-		gotoStep := strings.TrimSuffix(ctx.v.GotoStep(g.OnFailTarget), ".")
+		gotoStep := lowercaseFirst(strings.TrimSuffix(ctx.v.GotoStep(g.OnFailTarget), "."))
 		return fmt.Sprintf(
 			"If the gate fails, %s and re-run from there. Retry the script up to `%d` times first.",
 			gotoStep,
@@ -122,7 +156,18 @@ func (ctx *runbookCtx) gateOnFailProse(g GateView) string {
 	}
 }
 
+func lowercaseFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	r, size := utf8.DecodeRuneInString(s)
+	return string(unicode.ToLower(r)) + s[size:]
+}
+
 func (ctx *runbookCtx) renderBranch(n ir.Node, indent int) {
+	if ctx.err != nil {
+		return
+	}
 	prefix := ctx.indentPrefix(indent)
 	if indent == 0 {
 		ctx.step++
@@ -138,10 +183,20 @@ func (ctx *runbookCtx) renderBranch(n ir.Node, indent int) {
 		values := strings.Join(c.Values, ", ")
 		ctx.out.WriteString(fmt.Sprintf("%s- if `%s` is `%s`, do:\n", casePrefix, n.BranchValue, values))
 		ctx.renderNode(c.Body, indent+2)
+		if ctx.err != nil {
+			return
+		}
 	}
 }
 
 func (ctx *runbookCtx) renderLoop(n ir.Node, indent int) {
+	if ctx.err != nil {
+		return
+	}
+	if n.Cond == nil {
+		ctx.err = fmt.Errorf("render: loop missing condition")
+		return
+	}
 	prefix := ctx.indentPrefix(indent)
 	if indent == 0 {
 		ctx.step++
@@ -161,6 +216,13 @@ func (ctx *runbookCtx) renderLoop(n ir.Node, indent int) {
 }
 
 func (ctx *runbookCtx) renderRepeat(n ir.Node, indent int) {
+	if ctx.err != nil {
+		return
+	}
+	if n.Cond == nil {
+		ctx.err = fmt.Errorf("render: repeat missing condition")
+		return
+	}
 	prefix := ctx.indentPrefix(indent)
 	if indent == 0 {
 		ctx.step++
@@ -170,6 +232,9 @@ func (ctx *runbookCtx) renderRepeat(n ir.Node, indent int) {
 	}
 	if n.Body != nil {
 		ctx.renderNode(*n.Body, indent+1)
+		if ctx.err != nil {
+			return
+		}
 	}
 	cond := ctx.formatUntilCond(n.Cond)
 	maxPart := ""
@@ -187,6 +252,9 @@ func (ctx *runbookCtx) renderRepeat(n ir.Node, indent int) {
 }
 
 func (ctx *runbookCtx) renderParallel(n ir.Node, indent int) {
+	if ctx.err != nil {
+		return
+	}
 	prefix := ctx.indentPrefix(indent)
 	if indent == 0 {
 		ctx.step++
@@ -208,7 +276,7 @@ func (ctx *runbookCtx) renderParallel(n ir.Node, indent int) {
 	ctx.out.WriteString(ctx.v.SpawnParallel(views))
 	ctx.out.WriteString("\n")
 
-	if n.Gather != nil {
+	if n.Gather != nil && n.Payload != nil && len(n.Payload.Branches) > 0 {
 		gatherPrefix := prefix
 		if indent == 0 {
 			ctx.step++
@@ -216,11 +284,9 @@ func (ctx *runbookCtx) renderParallel(n ir.Node, indent int) {
 		} else {
 			ctx.out.WriteString(gatherPrefix + "- ")
 		}
-		branchNames := make([]string, 0)
-		if n.Payload != nil {
-			for _, b := range n.Payload.Branches {
-				branchNames = append(branchNames, b.ValueLabel)
-			}
+		branchNames := make([]string, 0, len(n.Payload.Branches))
+		for _, b := range n.Payload.Branches {
+			branchNames = append(branchNames, b.ValueLabel)
 		}
 		ctx.out.WriteString(fmt.Sprintf(
 			"Collect the outputs from `%s` and give them to `%s`.",
@@ -235,9 +301,6 @@ func (ctx *runbookCtx) renderParallel(n ir.Node, indent int) {
 }
 
 func (ctx *runbookCtx) formatUntilCond(c *ir.Cond) string {
-	if c == nil {
-		return ""
-	}
 	switch c.Op {
 	case "!=":
 		return fmt.Sprintf("`%s` is not `%s`", c.ValueLabel, c.Enum)
@@ -249,9 +312,6 @@ func (ctx *runbookCtx) formatUntilCond(c *ir.Cond) string {
 }
 
 func (ctx *runbookCtx) formatWhileCond(c *ir.Cond) string {
-	if c == nil {
-		return ""
-	}
 	switch c.Op {
 	case "!=":
 		return fmt.Sprintf("`%s` equals `%s`", c.ValueLabel, c.Enum)
@@ -262,20 +322,20 @@ func (ctx *runbookCtx) formatWhileCond(c *ir.Cond) string {
 	}
 }
 
-func (ctx *runbookCtx) findAgent(decl string) ir.Agent {
+func (ctx *runbookCtx) findAgent(decl string) (ir.Agent, error) {
 	for _, a := range ctx.p.Agents {
 		if a.Name == decl {
-			return a
+			return a, nil
 		}
 	}
-	return ir.Agent{Name: decl}
+	return ir.Agent{}, fmt.Errorf("render: agent %q not found in program", decl)
 }
 
-func (ctx *runbookCtx) findGate(decl string) ir.Gate {
+func (ctx *runbookCtx) findGate(decl string) (ir.Gate, error) {
 	for _, g := range ctx.p.Gates {
 		if g.Name == decl {
-			return g
+			return g, nil
 		}
 	}
-	return ir.Gate{Name: decl}
+	return ir.Gate{}, fmt.Errorf("render: gate %q not found in program", decl)
 }
