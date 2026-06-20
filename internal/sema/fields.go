@@ -286,6 +286,19 @@ func parseOnFail(s string) (model.GateFailAction, bool) {
 }
 
 func interpFlow(fl *model.Flow, fd *ast.Flow, diags *diag.Diagnostics) {
+	if fd.Params != nil && len(fd.Params.Params) > 0 {
+		emitLevelB(diags, fd.Params.Pos, "flow params")
+		for _, p := range fd.Params.Params {
+			if p == nil {
+				continue
+			}
+			tp := ""
+			if p.Type != nil {
+				tp = *p.Type
+			}
+			fl.Params = append(fl.Params, model.Param{Name: p.Name, Type: tp, Pos: p.Pos})
+		}
+	}
 	for _, item := range fd.Items {
 		if item.Field != nil {
 			f := item.Field

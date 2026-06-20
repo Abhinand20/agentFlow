@@ -36,6 +36,9 @@ func resolveStep(s *ast.Step, diags *diag.Diagnostics) model.Step {
 }
 
 func resolveChain(c *ast.Chain, diags *diag.Diagnostics) model.Step {
+	if c.Attr != nil {
+		emitLevelB(diags, c.Attr.Pos, "edge attributes")
+	}
 	if len(c.Atoms) == 1 {
 		return resolveAtom(c.Atoms[0], diags)
 	}
@@ -51,6 +54,7 @@ func resolveAtom(atom *ast.Atom, diags *diag.Diagnostics) model.Step {
 		return model.Step{}
 	}
 	if atom.Args != nil || atom.Block != nil {
+		emitLevelB(diags, atom.Pos, "call step")
 		return resolveCall(atom, diags)
 	}
 	st := model.Step{Kind: model.StepRef, Pos: atom.Pos}
@@ -87,6 +91,9 @@ func resolveBranch(b *ast.Branch, diags *diag.Diagnostics) model.Step {
 	st := model.Step{Kind: model.StepBranch, Pos: b.Pos}
 	if b.Value != nil {
 		st.BranchIsIt = b.Value.It
+		if b.Value.It {
+			emitLevelB(diags, b.Value.Pos, "explicit it")
+		}
 		if b.Value.Name != nil {
 			st.BranchValue = qualNameStr(b.Value.Name)
 		}
@@ -124,7 +131,7 @@ func resolveLoopBody(body []*ast.Step, cond *ast.Cond, max *float64, doWhile boo
 		Body:    resolveSteps(body, diags),
 	}
 	if cond != nil {
-		st.Cond = resolveCond(cond)
+		st.Cond = resolveCond(cond, diags)
 	}
 	if max != nil {
 		st.HasMax = true
@@ -142,10 +149,13 @@ func resolveLoopBody(body []*ast.Step, cond *ast.Cond, max *float64, doWhile boo
 	return st
 }
 
-func resolveCond(c *ast.Cond) *model.Cond {
+func resolveCond(c *ast.Cond, diags *diag.Diagnostics) *model.Cond {
 	mc := &model.Cond{Op: c.Op, Enum: c.Enum, Pos: c.Pos}
 	if c.Value != nil {
 		mc.IsIt = c.Value.It
+		if c.Value.It {
+			emitLevelB(diags, c.Value.Pos, "explicit it")
+		}
 		if c.Value.Name != nil {
 			mc.Value = qualNameStr(c.Value.Name)
 		}
@@ -161,6 +171,7 @@ func resolveParallel(p *ast.Parallel, diags *diag.Diagnostics) model.Step {
 		st.Gather = &gather
 	}
 	if p.Each != nil {
+		emitLevelB(diags, p.Each.Pos, "parallel each")
 		st.Each = &model.Each{
 			Item: qualNameStr(p.Each.Item),
 			As:   p.Each.As,

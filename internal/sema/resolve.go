@@ -27,6 +27,9 @@ func Resolve(root *ast.AST, srcDir string) (*model.Program, diag.Diagnostics) {
 			name := qualNameStr(decl.Use.Name)
 			prog.Order = append(prog.Order, model.DeclRef{Kind: model.DeclCapability, Name: name})
 			prog.Capabilities[name] = &model.Capability{Name: name, Pos: decl.Use.Pos}
+			if decl.Use.Alias != nil {
+				emitLevelB(&diags, decl.Use.Pos, "use … as …")
+			}
 		case decl.Type != nil:
 			prog.Order = append(prog.Order, model.DeclRef{Kind: model.DeclType, Name: decl.Type.Name})
 			prog.Types[decl.Type.Name] = &model.EnumType{Name: decl.Type.Name, Pos: decl.Type.Pos}
