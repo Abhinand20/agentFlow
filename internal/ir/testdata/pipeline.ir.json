@@ -1,0 +1,155 @@
+{
+  "Entry": {
+    "Trigger": "/write",
+    "FlowName": "content",
+    "InType": "Topic",
+    "OutType": "text"
+  },
+  "Agents": [
+    {
+      "Name": "analyze",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Extract the key findings from the research.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "edit",
+      "Provider": "anthropic",
+      "Alias": "haiku",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Tighten, fix grammar, and proofread the draft.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "research",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Gather credible sources and notes on the topic.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "write",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Draft the piece from the findings.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    }
+  ],
+  "Gates": null,
+  "Capabilities": [
+    {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null
+    }
+  ],
+  "Flow": {
+    "Name": "content",
+    "Return": {
+      "ValueLabel": "edit",
+      "OutType": "text",
+      "Defaulted": true,
+      "BranchTerminal": false
+    },
+    "Root": {
+      "Kind": "seq",
+      "Steps": [
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "research",
+            "ValueLabel": "research",
+            "Decl": "research",
+            "Kind": "agent",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": ""
+          },
+          "HasMax": false
+        },
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "analyze",
+            "ValueLabel": "analyze",
+            "Decl": "analyze",
+            "Kind": "agent",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": "research"
+          },
+          "HasMax": false
+        },
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "write",
+            "ValueLabel": "write",
+            "Decl": "write",
+            "Kind": "agent",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": "analyze"
+          },
+          "HasMax": false
+        },
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "edit",
+            "ValueLabel": "edit",
+            "Decl": "edit",
+            "Kind": "agent",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": "write"
+          },
+          "HasMax": false
+        }
+      ],
+      "HasMax": false
+    },
+    "Order": [
+      "research",
+      "analyze",
+      "write",
+      "edit"
+    ]
+  }
+}

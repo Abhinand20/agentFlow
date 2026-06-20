@@ -1,0 +1,432 @@
+{
+  "Entry": {
+    "Trigger": "/ship",
+    "FlowName": "ship",
+    "InType": "Ticket",
+    "OutType": "Decision"
+  },
+  "Agents": [
+    {
+      "Name": "build",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": [
+        {
+          "Capability": "github",
+          "Tool": "get_pr"
+        }
+      ],
+      "Prompt": "Implement the change.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "deploy",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "Decision",
+      "OutEnum": [
+        "shipped",
+        "rejected"
+      ],
+      "Tools": [
+        {
+          "Capability": "github",
+          "Tool": "create_pr"
+        }
+      ],
+      "Prompt": "Open the PR and report shipped.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "lint",
+      "Provider": "anthropic",
+      "Alias": "haiku",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Report lint findings.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "notify_author",
+      "Provider": "anthropic",
+      "Alias": "haiku",
+      "HostModelID": "",
+      "In": "",
+      "Out": "Decision",
+      "OutEnum": [
+        "shipped",
+        "rejected"
+      ],
+      "Tools": null,
+      "Prompt": "Tell the author the change was rejected.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "reviewer",
+      "Provider": "anthropic",
+      "Alias": "opus",
+      "HostModelID": "",
+      "In": "",
+      "Out": "Verdict",
+      "OutEnum": [
+        "approve",
+        "revise",
+        "reject"
+      ],
+      "Tools": null,
+      "Prompt": "Review the implementation, test results, and specialist feedback.\n\nReturn one of:\n\n- approve: the change is ready to ship.\n- revise: the change needs another implementation pass.\n- reject: the change should not continue.\n",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "security",
+      "Provider": "anthropic",
+      "Alias": "haiku",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Report security findings.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "style",
+      "Provider": "anthropic",
+      "Alias": "haiku",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Report style findings.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    }
+  ],
+  "Gates": [
+    {
+      "Name": "quality",
+      "Run": "scripts/test.sh",
+      "OnFail": "retry",
+      "OnFailTarget": "build",
+      "Behavior": "blocking",
+      "ScriptRetry": 2
+    }
+  ],
+  "Capabilities": [
+    {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null
+    },
+    {
+      "Name": "github",
+      "Kind": "mcp",
+      "Models": null,
+      "Tools": [
+        "get_pr",
+        "create_pr"
+      ],
+      "Transport": "",
+      "Command": "npx",
+      "Args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ]
+    }
+  ],
+  "Flow": {
+    "Name": "ship",
+    "Return": {
+      "ValueLabel": "",
+      "OutType": "Decision",
+      "Defaulted": false,
+      "BranchTerminal": true
+    },
+    "Root": {
+      "Kind": "seq",
+      "Steps": [
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "code_review.build",
+            "ValueLabel": "code_review.build",
+            "Decl": "build",
+            "Kind": "agent",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": ""
+          },
+          "HasMax": false
+        },
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "code_review.quality",
+            "ValueLabel": "",
+            "Decl": "quality",
+            "Kind": "gate",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": "code_review.build"
+          },
+          "HasMax": false
+        },
+        {
+          "Kind": "parallel",
+          "HasMax": false,
+          "Branches": [
+            {
+              "Kind": "step",
+              "Step": {
+                "ControlLabel": "lint",
+                "ValueLabel": "lint",
+                "Decl": "lint",
+                "Kind": "agent",
+                "OutType": "text",
+                "OutEnum": null,
+                "PrevProducer": "code_review.build"
+              },
+              "HasMax": false
+            },
+            {
+              "Kind": "step",
+              "Step": {
+                "ControlLabel": "security",
+                "ValueLabel": "security",
+                "Decl": "security",
+                "Kind": "agent",
+                "OutType": "text",
+                "OutEnum": null,
+                "PrevProducer": "code_review.build"
+              },
+              "HasMax": false
+            },
+            {
+              "Kind": "step",
+              "Step": {
+                "ControlLabel": "style",
+                "ValueLabel": "style",
+                "Decl": "style",
+                "Kind": "agent",
+                "OutType": "text",
+                "OutEnum": null,
+                "PrevProducer": "code_review.build"
+              },
+              "HasMax": false
+            }
+          ],
+          "Gather": {
+            "ControlLabel": "code_review.reviewer",
+            "ValueLabel": "code_review.review",
+            "Decl": "reviewer",
+            "Kind": "agent",
+            "OutType": "Verdict",
+            "OutEnum": [
+              "approve",
+              "revise",
+              "reject"
+            ],
+            "PrevProducer": "code_review.build"
+          },
+          "Payload": {
+            "GatherControlLabel": "code_review.reviewer",
+            "Branches": [
+              {
+                "ControlLabel": "lint",
+                "ValueLabel": "lint"
+              },
+              {
+                "ControlLabel": "security",
+                "ValueLabel": "security"
+              },
+              {
+                "ControlLabel": "style",
+                "ValueLabel": "style"
+              }
+            ]
+          }
+        },
+        {
+          "Kind": "loop",
+          "HasMax": true,
+          "Max": 3,
+          "Cond": {
+            "ValueLabel": "code_review.review",
+            "Op": "!=",
+            "Enum": "revise"
+          },
+          "Body": {
+            "Kind": "seq",
+            "Steps": [
+              {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "code_review.loop.build",
+                  "ValueLabel": "code_review.loop.build",
+                  "Decl": "build",
+                  "Kind": "agent",
+                  "OutType": "text",
+                  "OutEnum": null,
+                  "PrevProducer": "code_review.reviewer"
+                },
+                "HasMax": false
+              },
+              {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "code_review.loop.quality",
+                  "ValueLabel": "",
+                  "Decl": "quality",
+                  "Kind": "gate",
+                  "OutType": "text",
+                  "OutEnum": null,
+                  "PrevProducer": "code_review.loop.build"
+                },
+                "HasMax": false
+              },
+              {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "code_review.loop.reviewer",
+                  "ValueLabel": "code_review.review",
+                  "Decl": "reviewer",
+                  "Kind": "agent",
+                  "OutType": "Verdict",
+                  "OutEnum": [
+                    "approve",
+                    "revise",
+                    "reject"
+                  ],
+                  "PrevProducer": "code_review.loop.build"
+                },
+                "HasMax": false
+              }
+            ],
+            "HasMax": false
+          }
+        },
+        {
+          "Kind": "branch",
+          "BranchValue": "code_review",
+          "BranchEnum": [
+            "approve",
+            "revise",
+            "reject"
+          ],
+          "Cases": [
+            {
+              "Values": [
+                "approve"
+              ],
+              "Body": {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "deploy",
+                  "ValueLabel": "deploy",
+                  "Decl": "deploy",
+                  "Kind": "agent",
+                  "OutType": "Decision",
+                  "OutEnum": [
+                    "shipped",
+                    "rejected"
+                  ],
+                  "PrevProducer": "code_review.loop.reviewer"
+                },
+                "HasMax": false
+              }
+            },
+            {
+              "Values": [
+                "revise"
+              ],
+              "Body": {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "notify_author",
+                  "ValueLabel": "notify_author",
+                  "Decl": "notify_author",
+                  "Kind": "agent",
+                  "OutType": "Decision",
+                  "OutEnum": [
+                    "shipped",
+                    "rejected"
+                  ],
+                  "PrevProducer": "code_review.loop.reviewer"
+                },
+                "HasMax": false
+              }
+            },
+            {
+              "Values": [
+                "reject"
+              ],
+              "Body": {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "notify_author",
+                  "ValueLabel": "notify_author",
+                  "Decl": "notify_author",
+                  "Kind": "agent",
+                  "OutType": "Decision",
+                  "OutEnum": [
+                    "shipped",
+                    "rejected"
+                  ],
+                  "PrevProducer": "code_review.loop.reviewer"
+                },
+                "HasMax": false
+              }
+            }
+          ],
+          "HasMax": false
+        }
+      ],
+      "HasMax": false
+    },
+    "Order": [
+      "code_review.build",
+      "code_review.quality",
+      "lint",
+      "security",
+      "style",
+      "code_review.reviewer",
+      "code_review.loop.build",
+      "code_review.loop.quality",
+      "code_review.loop.reviewer",
+      "deploy",
+      "notify_author",
+      "notify_author"
+    ]
+  }
+}
