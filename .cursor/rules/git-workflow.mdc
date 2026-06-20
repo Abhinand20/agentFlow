@@ -1,0 +1,41 @@
+---
+description: Use feature branches and pull requests instead of committing directly to main
+alwaysApply: true
+---
+
+# Git workflow — pull requests only
+
+Do **not** commit or push directly to `main`. All implementation work goes through PRs.
+
+## Workflow
+
+1. **Branch** — create a focused branch from latest `main`:
+   - `feat/m1-parser`, `fix/diag-render`, `chore/progress-log`, etc.
+2. **Commits** — one logical chunk per commit on the branch (same as before).
+3. **Push** — `git push -u origin HEAD`
+4. **PR** — `gh pr create` with summary + test plan; return the PR URL to the user.
+5. **Merge** — user merges (or asks you to merge after review); do not force-push `main`.
+
+## Milestone mapping
+
+| Work | Branch example |
+|------|----------------|
+| M1 parser | `feat/m1-lexer-parser` |
+| M0 follow-up | `chore/m0-docs` |
+| Spec/plan only | `docs/prompt-file-spec` |
+
+## PR title format
+
+`feat(m1): add lexer and AST golden tests`
+
+Use conventional prefixes: `feat`, `fix`, `chore`, `docs`, `test`.
+
+## When the user says "commit and push"
+
+- Commit on the **current feature branch**
+- Push the branch
+- Open or update a PR — do not push to `main`
+
+## Exceptions
+
+Only commit directly to `main` if the user **explicitly** overrides this rule for a one-off hotfix.
