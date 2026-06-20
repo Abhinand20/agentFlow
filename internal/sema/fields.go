@@ -286,9 +286,27 @@ func parseOnFail(s string) (model.GateFailAction, bool) {
 }
 
 func interpFlow(fl *model.Flow, fd *ast.Flow, diags *diag.Diagnostics) {
-	_ = fl
-	_ = fd
-	_ = diags
+	for _, item := range fd.Items {
+		if item.Field != nil {
+			f := item.Field
+			switch f.Key {
+			case "on":
+				fl.On = strVal(f.Value)
+			case "in":
+				fl.In = scalarVal(f.Value)
+			case "out":
+				fl.Out = scalarVal(f.Value)
+				fl.OutExplicit = true
+			case "return":
+				fl.Return = scalarVal(f.Value)
+				fl.ReturnExplicit = true
+			}
+			continue
+		}
+		if item.Step != nil {
+			fl.Body = append(fl.Body, resolveStep(item.Step, diags))
+		}
+	}
 }
 
 func accountEntryFlow(prog *model.Program, diags *diag.Diagnostics) {
