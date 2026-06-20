@@ -7,9 +7,84 @@ import (
 )
 
 func interpUse(c *model.Capability, fields []*ast.Field, diags *diag.Diagnostics) {
-	_ = c
-	_ = fields
-	_ = diags
+	if c.Raw == nil {
+		c.Raw = make(map[string]*ast.Value)
+	}
+	for _, f := range fields {
+		switch f.Key {
+		case "kind":
+			c.Kind = scalarVal(f.Value)
+		case "models":
+			c.Models = identListVal(f.Value)
+		case "tools":
+			c.Tools = identListVal(f.Value)
+		case "transport":
+			c.Transport = strVal(f.Value)
+		case "command":
+			c.Command = strVal(f.Value)
+		case "args":
+			c.Args = strListVal(f.Value)
+		default:
+			diags.Add(diag.Diagnostic{
+				Code:     "AF120",
+				Severity: diag.Warning,
+				Msg:      "unknown field " + f.Key,
+				Pos:      f.Pos,
+			})
+			c.Raw[f.Key] = f.Value
+		}
+	}
+	if c.Kind == "mcp" && c.Command == "" {
+		diags.Add(diag.Diagnostic{
+			Code:     "AF130",
+			Severity: diag.Error,
+			Msg:      "mcp capability requires command",
+			Pos:      c.Pos,
+		})
+	}
+	if c.Kind == "model-provider" && len(c.Models) == 0 {
+		diags.Add(diag.Diagnostic{
+			Code:     "AF131",
+			Severity: diag.Error,
+			Msg:      "model-provider requires models list",
+			Pos:      c.Pos,
+		})
+	}
+}
+
+func strVal(v *ast.Value) string {
+	if v == nil || v.Str == nil {
+		return ""
+	}
+	return *v.Str
+}
+
+func identListVal(v *ast.Value) []string {
+	if v == nil || v.List == nil {
+		return nil
+	}
+	var out []string
+	for _, item := range v.List.Items {
+		if item.Ref != nil {
+			out = append(out, qualNameStr(item.Ref))
+		} else if item.Str != nil {
+			out = append(out, *item.Str)
+		}
+	}
+	return out
+}
+
+func strListVal(v *ast.Value) []string {
+	if v == nil || v.List == nil {
+		return nil
+	}
+	var out []string
+	for _, item := range v.List.Items {
+		if item.Str != nil {
+			out = append(out, *item.Str)
+		}
+	}
+	return out
 }
 
 func interpType(et *model.EnumType, td *ast.TypeDecl, diags *diag.Diagnostics) {
@@ -65,4 +140,8 @@ func refOrStr(v *ast.Value) string {
 		return *v.Str
 	}
 	return ""
+}
+
+func scalarVal(v *ast.Value) string {
+	return refOrStr(v)
 }
