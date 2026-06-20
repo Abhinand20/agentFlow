@@ -154,6 +154,6 @@ testdata/                      # AST, IR, render, FS goldens from review.af
 | Range | Examples |
 |-------|----------|
 | `AF0xx` | `AF000` parse error |
-| `AF1xx` | `AF110` ambiguous model, `AF150` Level B unsupported, `AF111`/`AF112` registry (M11) |
+| `AF1xx` | `AF110` model resolution, `AF120` unknown field (warn), `AF130`–`AF139` resolve structural, `AF150` Level B unsupported, `AF111`/`AF112` registry (M11) |
 | `AF2xx` | `AF200`–`AF210` validation (see M4 table) |
 | `AF3xx` | Capability negotiation, advisory fallbacks (M7, M10, M13) |

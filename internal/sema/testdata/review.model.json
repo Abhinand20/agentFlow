@@ -1,0 +1,636 @@
+{
+  "Capabilities": {
+    "anthropic": {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null,
+      "Raw": {}
+    },
+    "github": {
+      "Name": "github",
+      "Kind": "mcp",
+      "Models": null,
+      "Tools": [
+        "get_pr",
+        "create_pr"
+      ],
+      "Transport": "",
+      "Command": "npx",
+      "Args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "Raw": {}
+    }
+  },
+  "Types": {
+    "Decision": {
+      "Name": "Decision",
+      "Values": [
+        "shipped",
+        "rejected"
+      ]
+    },
+    "Verdict": {
+      "Name": "Verdict",
+      "Values": [
+        "approve",
+        "revise",
+        "reject"
+      ]
+    }
+  },
+  "Agents": {
+    "build": {
+      "Name": "build",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Implement the change.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": [
+        {
+          "Capability": "github",
+          "Tool": "get_pr",
+          "Raw": "github.get_pr"
+        }
+      ],
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "deploy": {
+      "Name": "deploy",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "Decision",
+      "Permissions": "",
+      "Prompt": "Open the PR and report shipped.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": [
+        {
+          "Capability": "github",
+          "Tool": "create_pr",
+          "Raw": "github.create_pr"
+        }
+      ],
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "lint": {
+      "Name": "lint",
+      "ModelAlias": "haiku",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "haiku",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Report lint findings.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "notify_author": {
+      "Name": "notify_author",
+      "ModelAlias": "haiku",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "haiku",
+      "In": "",
+      "Out": "Decision",
+      "Permissions": "",
+      "Prompt": "Tell the author the change was rejected.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "reviewer": {
+      "Name": "reviewer",
+      "ModelAlias": "opus",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "opus",
+      "In": "",
+      "Out": "Verdict",
+      "Permissions": "",
+      "Prompt": "Review the implementation, test results, and specialist feedback.\n\nReturn one of:\n\n- approve: the change is ready to ship.\n- revise: the change needs another implementation pass.\n- reject: the change should not continue.\n",
+      "PromptPath": "prompts/reviewer.md",
+      "PromptFromFile": true,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "prompts/reviewer.md",
+        "OK": true,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "security": {
+      "Name": "security",
+      "ModelAlias": "haiku",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "haiku",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Report security findings.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "style": {
+      "Name": "style",
+      "ModelAlias": "haiku",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "haiku",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Report style findings.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    }
+  },
+  "Gates": {
+    "quality": {
+      "Name": "quality",
+      "Run": "scripts/test.sh",
+      "OnFail": 1,
+      "OnFailTarget": "build",
+      "Behavior": "blocking",
+      "ScriptRetry": 2,
+      "Raw": {}
+    }
+  },
+  "Flows": {
+    "code_review": {
+      "Name": "code_review",
+      "Entry": false,
+      "On": "",
+      "In": "Ticket",
+      "Out": "Verdict",
+      "Return": "review",
+      "OutExplicit": true,
+      "ReturnExplicit": true,
+      "Params": null,
+      "Body": [
+        {
+          "Kind": 0,
+          "Ref": "build",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        },
+        {
+          "Kind": 0,
+          "Ref": "quality",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        },
+        {
+          "Kind": 5,
+          "Ref": "",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": [
+            {
+              "Kind": 0,
+              "Ref": "lint",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "security",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "style",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            }
+          ],
+          "Gather": {
+            "Kind": 0,
+            "Ref": "reviewer",
+            "Alias": "review",
+            "Chain": null,
+            "BranchValue": "",
+            "BranchIsIt": false,
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "HasMax": false,
+            "Body": null,
+            "DoWhile": false,
+            "PFork": null,
+            "Gather": null,
+            "Each": null,
+            "CallArgs": null,
+            "CallBlock": null
+          },
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        },
+        {
+          "Kind": 3,
+          "Ref": "",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": {
+            "Value": "review",
+            "IsIt": false,
+            "Op": "!=",
+            "Enum": "revise"
+          },
+          "Max": 3,
+          "HasMax": true,
+          "Body": [
+            {
+              "Kind": 0,
+              "Ref": "build",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "quality",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "reviewer",
+              "Alias": "review",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            }
+          ],
+          "DoWhile": false,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        }
+      ]
+    },
+    "ship": {
+      "Name": "ship",
+      "Entry": true,
+      "On": "/ship",
+      "In": "Ticket",
+      "Out": "Decision",
+      "Return": "",
+      "OutExplicit": true,
+      "ReturnExplicit": false,
+      "Params": null,
+      "Body": [
+        {
+          "Kind": 0,
+          "Ref": "code_review",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        },
+        {
+          "Kind": 2,
+          "Ref": "",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "code_review",
+          "BranchIsIt": false,
+          "Cases": [
+            {
+              "Values": [
+                "approve"
+              ],
+              "Step": {
+                "Kind": 0,
+                "Ref": "deploy",
+                "Alias": "",
+                "Chain": null,
+                "BranchValue": "",
+                "BranchIsIt": false,
+                "Cases": null,
+                "Cond": null,
+                "Max": null,
+                "HasMax": false,
+                "Body": null,
+                "DoWhile": false,
+                "PFork": null,
+                "Gather": null,
+                "Each": null,
+                "CallArgs": null,
+                "CallBlock": null
+              }
+            },
+            {
+              "Values": [
+                "revise"
+              ],
+              "Step": {
+                "Kind": 0,
+                "Ref": "notify_author",
+                "Alias": "",
+                "Chain": null,
+                "BranchValue": "",
+                "BranchIsIt": false,
+                "Cases": null,
+                "Cond": null,
+                "Max": null,
+                "HasMax": false,
+                "Body": null,
+                "DoWhile": false,
+                "PFork": null,
+                "Gather": null,
+                "Each": null,
+                "CallArgs": null,
+                "CallBlock": null
+              }
+            },
+            {
+              "Values": [
+                "reject"
+              ],
+              "Step": {
+                "Kind": 0,
+                "Ref": "notify_author",
+                "Alias": "",
+                "Chain": null,
+                "BranchValue": "",
+                "BranchIsIt": false,
+                "Cases": null,
+                "Cond": null,
+                "Max": null,
+                "HasMax": false,
+                "Body": null,
+                "DoWhile": false,
+                "PFork": null,
+                "Gather": null,
+                "Each": null,
+                "CallArgs": null,
+                "CallBlock": null
+              }
+            }
+          ],
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        }
+      ]
+    }
+  },
+  "EntryFlow": "ship",
+  "Order": [
+    {
+      "Kind": 0,
+      "Name": "anthropic"
+    },
+    {
+      "Kind": 0,
+      "Name": "github"
+    },
+    {
+      "Kind": 1,
+      "Name": "Verdict"
+    },
+    {
+      "Kind": 1,
+      "Name": "Decision"
+    },
+    {
+      "Kind": 2,
+      "Name": "build"
+    },
+    {
+      "Kind": 2,
+      "Name": "lint"
+    },
+    {
+      "Kind": 2,
+      "Name": "security"
+    },
+    {
+      "Kind": 2,
+      "Name": "style"
+    },
+    {
+      "Kind": 2,
+      "Name": "reviewer"
+    },
+    {
+      "Kind": 2,
+      "Name": "deploy"
+    },
+    {
+      "Kind": 2,
+      "Name": "notify_author"
+    },
+    {
+      "Kind": 3,
+      "Name": "quality"
+    },
+    {
+      "Kind": 4,
+      "Name": "code_review"
+    },
+    {
+      "Kind": 4,
+      "Name": "ship"
+    }
+  ]
+}
