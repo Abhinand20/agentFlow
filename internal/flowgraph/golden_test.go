@@ -26,7 +26,10 @@ func TestGoldenResolved(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse: %#v", diags)
 			}
-			prog, _ := sema.Resolve(root, examplesDir)
+			prog, semaDiags := sema.Resolve(root, examplesDir)
+			if semaDiags.HasErrors() {
+				t.Fatalf("sema: %#v", semaDiags)
+			}
 			res, resDiags := Resolve(prog)
 			if resDiags.HasErrors() {
 				t.Fatalf("resolve: %#v", resDiags)

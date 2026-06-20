@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alecthomas/participle/v2/lexer"
 	"github.com/Abhinand20/agentFlow/internal/diag"
 	"github.com/Abhinand20/agentFlow/internal/model"
 )
@@ -29,7 +28,7 @@ func Resolve(prog *model.Program) (*Resolved, diag.Diagnostics) {
 		tree = &Node{Kind: KindSeq, Steps: []*Node{tree}}
 	}
 	b.wireSequentialEdges(tree)
-	b.resolveFlowReturn(entry, tree, scope{})
+	b.checkDefaultReturn(entry, tree)
 	return &Resolved{
 		Entry:     prog.EntryFlow,
 		Tree:      tree,
@@ -119,11 +118,15 @@ func (b *builder) inlineFlow(st model.Step, f *model.Flow, sc scope) *Node {
 		}
 	}
 	b.visiting = append(b.visiting, f.Name)
-	childSc := scope{prefix: sc.prefix + subLabel + "."}
+	childSc := scope{
+		prefix:     sc.prefix + sc.loopPrefix + subLabel + ".",
+		loopPrefix: "",
+		loopCount:  sc.loopCount,
+	}
 	body := b.lowerSteps(f.Body, childSc)
 	b.visiting = b.visiting[:len(b.visiting)-1]
 
-	b.registerSubflowValue(subLabel, f, sc, st.Pos)
+	b.registerSubflowValue(subLabel, f, sc, body)
 
 	if body == nil {
 		return nil
@@ -131,10 +134,11 @@ func (b *builder) inlineFlow(st model.Step, f *model.Flow, sc scope) *Node {
 	return body
 }
 
-func (b *builder) registerSubflowValue(subLabel string, f *model.Flow, sc scope, pos lexer.Position) {
-	control := sc.prefix + subLabel
-	valueLabel := control
-	returnsFrom := b.resolveReturnProducer(f, scope{prefix: sc.prefix + subLabel + "."}, pos)
+func (b *builder) registerSubflowValue(subLabel string, f *model.Flow, parentSc scope, body *Node) {
+	shell := parentSc.prefix + parentSc.loopPrefix + subLabel
+	innerPrefix := shell + "."
+	returnsFrom := b.resolveReturnProducer(f, innerPrefix, body)
+	b.checkDefaultReturn(f, body)
 	var outEnum []string
 	if f.Out != "" && f.Out != "text" {
 		if et, ok := b.prog.Types[f.Out]; ok {
@@ -142,14 +146,14 @@ func (b *builder) registerSubflowValue(subLabel string, f *model.Flow, sc scope,
 		}
 	}
 	inst := &StepInstance{
-		ControlLabel: control,
-		ValueLabel:   valueLabel,
+		ControlLabel: shell,
+		ValueLabel:   shell,
 		Decl:         f.Name,
 		Kind:         model.StepRef,
 		OutEnum:      outEnum,
 		ReturnsFrom:  returnsFrom,
 	}
-	b.instances[control] = inst
+	b.instances[shell] = inst
 }
 
 func (b *builder) registerLeaf(st model.Step, sc scope) *Node {
@@ -274,10 +278,18 @@ func (b *builder) lowerParallel(st model.Step, sc scope) *Node {
 		branches = append(branches, n)
 		if n.Kind == KindStep {
 			if inst := b.instances[n.Label]; inst != nil {
-				key := inst.Decl
+				key := inst.ControlLabel
 				val := inst.ValueLabel
 				if val == "" {
 					val = inst.ControlLabel
+				}
+				if _, exists := payload[key]; exists {
+					b.diags.Add(diag.Diagnostic{
+						Code:     "AF208",
+						Severity: diag.Warning,
+						Msg:      fmt.Sprintf("parallel branch control label %q duplicated", key),
+						Pos:      st.Pos,
+					})
 				}
 				payload[key] = val
 			}
@@ -313,19 +325,18 @@ func (b *builder) allocControlLabel(label string, _ scope) string {
 	}
 }
 
-func (b *builder) resolveFlowReturn(f *model.Flow, tree *Node, sc scope) {
+func (b *builder) checkDefaultReturn(f *model.Flow, tree *Node) {
 	if len(f.Body) == 0 {
 		return
 	}
 	if f.ReturnExplicit {
-		return // explicit return validated in M4
+		return
 	}
-	// Rule 0: default return = terminal producer
+	if endsInBranch(tree) {
+		return // branch-terminal; M4 AF210
+	}
 	terminal := lastSequentialProducer(tree)
 	if terminal == "" {
-		if endsInBranch(tree) {
-			return // branch-terminal; M4 AF210
-		}
 		b.diags.Add(diag.Diagnostic{
 			Code:     "AF209",
 			Severity: diag.Error,
@@ -345,9 +356,9 @@ func (b *builder) resolveFlowReturn(f *model.Flow, tree *Node, sc scope) {
 	}
 }
 
-func (b *builder) resolveReturnProducer(f *model.Flow, sc scope, _ lexer.Position) string {
-	wantValue := sc.prefix + f.Return
+func (b *builder) resolveReturnProducer(f *model.Flow, innerPrefix string, body *Node) string {
 	if f.ReturnExplicit {
+		wantValue := innerPrefix + f.Return
 		var fallback string
 		for ctrl, inst := range b.instances {
 			if inst.ValueLabel != wantValue {
@@ -363,26 +374,12 @@ func (b *builder) resolveReturnProducer(f *model.Flow, sc scope, _ lexer.Positio
 		if fallback != "" {
 			return fallback
 		}
-		return wantValue
+		return ""
 	}
-	// Rule 0 default: last sequential producer under subflow prefix (exclude subflow value shell).
-	prefix := sc.prefix
-	var last string
-	for ctrl, inst := range b.instances {
-		if !strings.HasPrefix(ctrl, prefix) {
-			continue
-		}
-		if inst.ValueLabel == "" {
-			continue
-		}
-		if inst.ReturnsFrom != "" {
-			continue
-		}
-		if last == "" || ctrl > last {
-			last = ctrl
-		}
+	if endsInBranch(body) {
+		return ""
 	}
-	return last
+	return lastSequentialProducer(body)
 }
 
 func lastSequentialProducer(tree *Node) string {

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/alecthomas/participle/v2/lexer"
@@ -30,7 +31,10 @@ func resolveFixture(t *testing.T, name string) (*Resolved, *model.Program) {
 	if diags.HasErrors() {
 		t.Fatalf("parse: %#v", diags)
 	}
-	prog, _ := sema.Resolve(root, dir)
+	prog, semaDiags := sema.Resolve(root, dir)
+	if semaDiags.HasErrors() {
+		t.Fatalf("sema: %#v", semaDiags)
+	}
 	res, _ := Resolve(prog)
 	return res, prog
 }
@@ -318,5 +322,126 @@ func TestBranchArmDedup(t *testing.T) {
 	}
 	if res.Instances["notify_author"] == nil {
 		t.Fatal("expected single notify_author instance")
+	}
+}
+
+func TestSubflowInLoopPreservesLoopPrefix(t *testing.T) {
+	pos := lexer.Position{Line: 1}
+	prog := &model.Program{
+		Agents: map[string]*model.Agent{
+			"build": {Name: "build"},
+		},
+		Flows: map[string]*model.Flow{
+			"inner": {
+				Name: "inner", Pos: pos,
+				Body: []model.Step{{Kind: model.StepRef, Ref: "build", Pos: pos}},
+			},
+			"main": {
+				Name: "main", Entry: true, Pos: pos,
+				Body: []model.Step{
+					{
+						Kind: model.StepLoop, Pos: pos,
+						Body: []model.Step{
+							{Kind: model.StepRef, Ref: "inner", Pos: pos},
+						},
+					},
+				},
+			},
+		},
+		EntryFlow: "main",
+	}
+	res, _ := Resolve(prog)
+	if res.Instances["loop.inner.build"] == nil {
+		t.Fatalf("instances = %#v", res.Instances)
+	}
+}
+
+func TestExplicitReturnMissingInstance(t *testing.T) {
+	pos := lexer.Position{Line: 1}
+	prog := &model.Program{
+		Agents: map[string]*model.Agent{
+			"a": {Name: "a"},
+		},
+		Flows: map[string]*model.Flow{
+			"main": {
+				Name: "main", Entry: true, Pos: pos,
+				Return: "missing", ReturnExplicit: true,
+				Body:   []model.Step{{Kind: model.StepRef, Ref: "a", Pos: pos}},
+			},
+		},
+		EntryFlow: "main",
+	}
+	res, _ := Resolve(prog)
+	// entry flow explicit return — no subflow shell; ReturnsFrom not on entry
+	_ = res
+}
+
+func TestBranchTerminalSubflowReturnsFromEmpty(t *testing.T) {
+	pos := lexer.Position{Line: 1}
+	prog := &model.Program{
+		Types: map[string]*model.EnumType{
+			"V": {Name: "V", Values: []string{"x"}},
+		},
+		Agents: map[string]*model.Agent{
+			"a": {Name: "a", Out: "V"},
+			"b": {Name: "b", Out: "V"},
+		},
+		Flows: map[string]*model.Flow{
+			"inner": {
+				Name: "inner", Out: "V", Pos: pos,
+				Body: []model.Step{
+					{Kind: model.StepRef, Ref: "a", Pos: pos},
+					{
+						Kind: model.StepBranch, BranchValue: "a", Pos: pos,
+						Cases: []model.Case{
+							{Values: []string{"x"}, Step: model.Step{Kind: model.StepRef, Ref: "b", Pos: pos}},
+						},
+					},
+				},
+			},
+			"main": {
+				Name: "main", Entry: true, Pos: pos,
+				Body: []model.Step{{Kind: model.StepRef, Ref: "inner", Pos: pos}},
+			},
+		},
+		EntryFlow: "main",
+	}
+	res, _ := Resolve(prog)
+	inner := res.Instances["inner"]
+	if inner == nil {
+		t.Fatal("missing inner subflow shell")
+	}
+	if inner.ReturnsFrom != "" {
+		t.Fatalf("ReturnsFrom = %q, want empty for branch-terminal", inner.ReturnsFrom)
+	}
+}
+
+func TestInlinedSubflowGateTerminalAF209(t *testing.T) {
+	pos := lexer.Position{Line: 1}
+	prog := &model.Program{
+		Gates: map[string]*model.Gate{
+			"quality": {Name: "quality"},
+		},
+		Flows: map[string]*model.Flow{
+			"inner": {
+				Name: "inner", Pos: pos,
+				Body: []model.Step{{Kind: model.StepRef, Ref: "quality", Pos: pos}},
+			},
+			"main": {
+				Name: "main", Entry: true, Pos: pos,
+				Body: []model.Step{{Kind: model.StepRef, Ref: "inner", Pos: pos}},
+			},
+		},
+		EntryFlow: "main",
+	}
+	_, diags := Resolve(prog)
+	found := false
+	for _, d := range diags {
+		if d.Code == "AF209" && strings.Contains(d.Msg, "inner") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("diags = %#v", diags)
 	}
 }
