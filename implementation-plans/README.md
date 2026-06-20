@@ -18,7 +18,7 @@ Execution plans for building AgentFlow. Milestone **design specs** live in
 | 2026-06-19 | [2026-06-19-m3-inline-normalize.md](2026-06-19-m3-inline-normalize.md) | M3 | Done |
 | 2026-06-19 | [2026-06-19-m4-validation.md](2026-06-19-m4-validation.md) | M4 | Done |
 | 2026-06-19 | [2026-06-19-m5-ir.md](2026-06-19-m5-ir.md) | M5 | Done |
-| 2026-06-19 | [2026-06-19-m6-render.md](2026-06-19-m6-render.md) | M6 | Planned |
+| 2026-06-19 | [2026-06-19-m6-render.md](2026-06-19-m6-render.md) | M6 | Done |
 | 2026-06-19 | [2026-06-19-m7-claude-binding.md](2026-06-19-m7-claude-binding.md) | M7 | Planned |
 | 2026-06-19 | [2026-06-19-m8-cli-e2e.md](2026-06-19-m8-cli-e2e.md) | M8 | Planned |
 
