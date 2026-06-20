@@ -1,0 +1,2 @@
+1. Invoke the `build` subagent.
+2. Invoke the `reviewer` subagent using the output from `s1`.

@@ -1,0 +1,4 @@
+1.
+  - Invoke the `generate` subagent.
+  - Invoke the `critic` subagent using the output from `repeat.generate`.
+Then repeat the steps above until `verdict` equals `pass`, at most `2` times. The check happens **after** each pass, so always run the steps at least once.

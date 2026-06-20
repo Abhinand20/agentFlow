@@ -1,0 +1,1 @@
+1. Run `scripts/test.sh`. If the gate fails, re-enter the current loop.

@@ -1,0 +1,1 @@
+1. Run `scripts/test.sh`. If the gate fails, Go back to step `build` and re-run from there. Retry the script up to `2` times first.
