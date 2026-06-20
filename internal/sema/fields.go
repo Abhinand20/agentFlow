@@ -291,12 +291,6 @@ func interpFlow(fl *model.Flow, fd *ast.Flow, diags *diag.Diagnostics) {
 	_ = diags
 }
 
-func resolvePrompts(prog *model.Program, srcDir string, diags *diag.Diagnostics) {
-	_ = prog
-	_ = srcDir
-	_ = diags
-}
-
 func accountEntryFlow(prog *model.Program, diags *diag.Diagnostics) {
 	_ = prog
 	_ = diags
