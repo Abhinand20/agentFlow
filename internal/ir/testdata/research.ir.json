@@ -1,0 +1,178 @@
+{
+  "Entry": {
+    "Trigger": "/research",
+    "FlowName": "research",
+    "InType": "Topic",
+    "OutType": "Report"
+  },
+  "Agents": [
+    {
+      "Name": "competitor",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Identify the main competitors and their positioning.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "financial",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Assess revenue model, margins, and financial risks.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "market",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Analyze market size, growth, and trends for the topic.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "synthesize",
+      "Provider": "anthropic",
+      "Alias": "opus",
+      "HostModelID": "",
+      "In": "",
+      "Out": "Report",
+      "OutEnum": [
+        "ready"
+      ],
+      "Tools": null,
+      "Prompt": "Combine the market, competitor, and financial analyses into one report. Report `ready` when complete.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    }
+  ],
+  "Gates": null,
+  "Capabilities": [
+    {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null
+    }
+  ],
+  "Flow": {
+    "Name": "research",
+    "Return": {
+      "ValueLabel": "report",
+      "OutType": "Report",
+      "Defaulted": true,
+      "BranchTerminal": false
+    },
+    "Root": {
+      "Kind": "seq",
+      "Steps": [
+        {
+          "Kind": "parallel",
+          "HasMax": false,
+          "Branches": [
+            {
+              "Kind": "step",
+              "Step": {
+                "ControlLabel": "market",
+                "ValueLabel": "market",
+                "Decl": "market",
+                "Kind": "agent",
+                "OutType": "text",
+                "OutEnum": null,
+                "PrevProducer": ""
+              },
+              "HasMax": false
+            },
+            {
+              "Kind": "step",
+              "Step": {
+                "ControlLabel": "competitor",
+                "ValueLabel": "competitor",
+                "Decl": "competitor",
+                "Kind": "agent",
+                "OutType": "text",
+                "OutEnum": null,
+                "PrevProducer": ""
+              },
+              "HasMax": false
+            },
+            {
+              "Kind": "step",
+              "Step": {
+                "ControlLabel": "financial",
+                "ValueLabel": "financial",
+                "Decl": "financial",
+                "Kind": "agent",
+                "OutType": "text",
+                "OutEnum": null,
+                "PrevProducer": ""
+              },
+              "HasMax": false
+            }
+          ],
+          "Gather": {
+            "ControlLabel": "synthesize",
+            "ValueLabel": "report",
+            "Decl": "synthesize",
+            "Kind": "agent",
+            "OutType": "Report",
+            "OutEnum": [
+              "ready"
+            ],
+            "PrevProducer": ""
+          },
+          "Payload": {
+            "GatherControlLabel": "synthesize",
+            "Branches": [
+              {
+                "ControlLabel": "competitor",
+                "ValueLabel": "competitor"
+              },
+              {
+                "ControlLabel": "financial",
+                "ValueLabel": "financial"
+              },
+              {
+                "ControlLabel": "market",
+                "ValueLabel": "market"
+              }
+            ]
+          }
+        }
+      ],
+      "HasMax": false
+    },
+    "Order": [
+      "market",
+      "competitor",
+      "financial",
+      "synthesize"
+    ]
+  }
+}

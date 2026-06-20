@@ -1,0 +1,122 @@
+{
+  "Entry": {
+    "Trigger": "/sql",
+    "FlowName": "sql",
+    "InType": "Spec",
+    "OutType": "text"
+  },
+  "Agents": [
+    {
+      "Name": "critic",
+      "Provider": "anthropic",
+      "Alias": "opus",
+      "HostModelID": "",
+      "In": "",
+      "Out": "Verdict",
+      "OutEnum": [
+        "pass",
+        "revise"
+      ],
+      "Tools": null,
+      "Prompt": "Check the SQL for correctness and optimization. Give concrete feedback, then report `pass` or `revise`.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "generate",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "Write or refine the SQL for the request. If reviewer feedback is present above, address it.",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    }
+  ],
+  "Gates": null,
+  "Capabilities": [
+    {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null
+    }
+  ],
+  "Flow": {
+    "Name": "sql",
+    "Return": {
+      "ValueLabel": "draft",
+      "OutType": "text",
+      "Defaulted": false,
+      "BranchTerminal": false
+    },
+    "Root": {
+      "Kind": "seq",
+      "Steps": [
+        {
+          "Kind": "loop",
+          "DoWhile": true,
+          "HasMax": true,
+          "Max": 3,
+          "Cond": {
+            "ValueLabel": "verdict",
+            "Op": "==",
+            "Enum": "pass"
+          },
+          "Body": {
+            "Kind": "seq",
+            "Steps": [
+              {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "repeat.generate",
+                  "ValueLabel": "draft",
+                  "Decl": "generate",
+                  "Kind": "agent",
+                  "OutType": "text",
+                  "OutEnum": null,
+                  "PrevProducer": ""
+                },
+                "HasMax": false
+              },
+              {
+                "Kind": "step",
+                "Step": {
+                  "ControlLabel": "repeat.critic",
+                  "ValueLabel": "verdict",
+                  "Decl": "critic",
+                  "Kind": "agent",
+                  "OutType": "Verdict",
+                  "OutEnum": [
+                    "pass",
+                    "revise"
+                  ],
+                  "PrevProducer": "repeat.generate"
+                },
+                "HasMax": false
+              }
+            ],
+            "HasMax": false
+          }
+        }
+      ],
+      "HasMax": false
+    },
+    "Order": [
+      "repeat.generate",
+      "repeat.critic"
+    ]
+  }
+}
