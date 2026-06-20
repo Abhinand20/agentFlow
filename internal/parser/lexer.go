@@ -10,9 +10,6 @@ import "github.com/alecthomas/participle/v2/lexer"
 
 // afLexer tokenizes AgentFlow source. Rule order matters: participle tries rules
 // top-to-bottom and takes the first match at each position.
-// AfLexer returns the AgentFlow lexer definition.
-func AfLexer() lexer.Definition { return afLexer }
-
 var afLexer = lexer.MustSimple([]lexer.SimpleRule{
 	{Name: "Comment", Pattern: `#[^\n]*`},
 	{Name: "Whitespace", Pattern: `\s+`},
