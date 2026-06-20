@@ -2,7 +2,7 @@
 
 - Milestone: M6
 - Version: v0.1 (MVP) — Language Level A
-- Status: Planned
+- Status: Done
 - Spec: [§9 Output protocol](../../spec/grammar.md#9-output-protocol-contract), [§4 Data model](../../spec/grammar.md#4-execution-and-data-model), [§12 Guarantees](../../spec/grammar.md#12-runtime-guarantees-by-target)
 
 ## Goal

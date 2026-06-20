@@ -1,0 +1,5 @@
+1. Read the `out:` value from `code_review`. Then:
+  - if `code_review` is `approve`, do:
+    - Invoke the `deploy` subagent.
+  - if `code_review` is `reject`, do:
+    - Invoke the `notify_author` subagent.

@@ -1,0 +1,1 @@
+1. Run `scripts/test.sh`. If the gate fails, stop the flow and report failure.

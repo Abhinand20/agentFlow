@@ -1,0 +1,2 @@
+1. Spawn these subagents together: lint, security, style.
+2. Collect the outputs from `lint`, `security`, `style` and give them to `reviewer`. Use the output from `build` as sequential context.

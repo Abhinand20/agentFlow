@@ -1,0 +1,4 @@
+1.
+  - Invoke the `generate` subagent.
+  - Invoke the `critic` subagent using the output from `repeat.generate`. Read the last `agentflow-output` block. If it is missing or invalid, re-invoke the agent up to `0` times, then stop the flow. Allowed values: pass, revise.
+Then repeat the steps above until `verdict` equals `pass`, at most `2` times. The check happens **after** each pass, so always run the steps at least once.
