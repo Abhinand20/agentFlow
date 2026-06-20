@@ -199,9 +199,90 @@ func intVal(v *ast.Value) (int, bool) {
 }
 
 func interpGate(g *model.Gate, fields []*ast.Field, diags *diag.Diagnostics) {
-	_ = g
-	_ = fields
-	_ = diags
+	if g.Raw == nil {
+		g.Raw = make(map[string]*ast.Value)
+	}
+	g.Behavior = "advisory"
+	g.OnFail = model.FailHalt
+
+	for _, f := range fields {
+		switch f.Key {
+		case "run":
+			g.Run = strVal(f.Value)
+		case "on-fail":
+			action, ok := parseOnFail(scalarVal(f.Value))
+			if !ok {
+				diags.Add(diag.Diagnostic{
+					Code:     "AF134",
+					Severity: diag.Error,
+					Msg:      "bounce-back is not valid; use retry or goto with on-fail-target",
+					Pos:      f.Pos,
+				})
+			} else {
+				g.OnFail = action
+			}
+		case "on-fail-target":
+			g.OnFailTarget = scalarVal(f.Value)
+		case "behavior":
+			g.Behavior = scalarVal(f.Value)
+		case "retry":
+			n, ok := intVal(f.Value)
+			if !ok || n < 0 {
+				diags.Add(diag.Diagnostic{
+					Code:     "AF000",
+					Severity: diag.Error,
+					Msg:      "retry must be a non-negative integer",
+					Pos:      f.Pos,
+				})
+			} else {
+				g.ScriptRetry = n
+			}
+		default:
+			diags.Add(diag.Diagnostic{
+				Code:     "AF120",
+				Severity: diag.Warning,
+				Msg:      "unknown field " + f.Key,
+				Pos:      f.Pos,
+			})
+			g.Raw[f.Key] = f.Value
+		}
+	}
+
+	switch g.OnFail {
+	case model.FailRetryStep, model.FailGotoStep:
+		if g.OnFailTarget == "" {
+			diags.Add(diag.Diagnostic{
+				Code:     "AF135",
+				Severity: diag.Error,
+				Msg:      "on-fail: retry requires on-fail-target",
+				Pos:      g.Pos,
+			})
+		}
+	case model.FailHalt, model.FailEnterLoop:
+		if g.OnFailTarget != "" {
+			diags.Add(diag.Diagnostic{
+				Code:     "AF136",
+				Severity: diag.Warning,
+				Msg:      "on-fail-target ignored for halt/enter-loop",
+				Pos:      g.Pos,
+			})
+		}
+	}
+}
+
+func parseOnFail(s string) (model.GateFailAction, bool) {
+	switch s {
+	case "halt":
+		return model.FailHalt, true
+	case "retry":
+		return model.FailRetryStep, true
+	case "goto":
+		return model.FailGotoStep, true
+	case "enter-loop":
+		return model.FailEnterLoop, true
+	default:
+		return model.FailHalt, false
+	}
 }
 
 func interpFlow(fl *model.Flow, fd *ast.Flow, diags *diag.Diagnostics) {
