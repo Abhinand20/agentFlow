@@ -1,0 +1,99 @@
+{
+  "Entry": {
+    "Trigger": "/docs",
+    "FlowName": "docs",
+    "InType": "Feature",
+    "OutType": "text"
+  },
+  "Agents": [
+    {
+      "Name": "draft",
+      "Provider": "anthropic",
+      "Alias": "sonnet",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "You are a technical writer.\n\nUsing the outline from the previous step, write the documentation:\n\n- Follow the outline's section order exactly.\n- Write clear, example-led prose aimed at a developer audience.\n- Prefer short paragraphs and concrete code or command examples where useful.\n\nReturn the finished markdown document.\n",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    },
+    {
+      "Name": "outline",
+      "Provider": "anthropic",
+      "Alias": "haiku",
+      "HostModelID": "",
+      "In": "",
+      "Out": "text",
+      "OutEnum": null,
+      "Tools": null,
+      "Prompt": "You are a documentation planner.\n\nGiven a feature description, produce a concise outline for its documentation:\n\n- A one-line summary of what the feature does.\n- The 3-5 sections the docs should cover, in order.\n- For each section, a single sentence describing its purpose.\n\nKeep the outline tight; do not write the prose yet.\n",
+      "Permissions": "",
+      "Retry": 0,
+      "Description": ""
+    }
+  ],
+  "Gates": null,
+  "Capabilities": [
+    {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null
+    }
+  ],
+  "Flow": {
+    "Name": "docs",
+    "Return": {
+      "ValueLabel": "draft",
+      "OutType": "text",
+      "Defaulted": true,
+      "BranchTerminal": false
+    },
+    "Root": {
+      "Kind": "seq",
+      "Steps": [
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "outline",
+            "ValueLabel": "outline",
+            "Decl": "outline",
+            "Kind": "agent",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": ""
+          },
+          "HasMax": false
+        },
+        {
+          "Kind": "step",
+          "Step": {
+            "ControlLabel": "draft",
+            "ValueLabel": "draft",
+            "Decl": "draft",
+            "Kind": "agent",
+            "OutType": "text",
+            "OutEnum": null,
+            "PrevProducer": "outline"
+          },
+          "HasMax": false
+        }
+      ],
+      "HasMax": false
+    },
+    "Order": [
+      "outline",
+      "draft"
+    ]
+  }
+}
