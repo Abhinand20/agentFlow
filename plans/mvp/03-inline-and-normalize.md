@@ -2,7 +2,7 @@
 
 - Milestone: M3
 - Version: v0.1 (MVP) — Language Level A
-- Status: Planned
+- Status: Done
 - Spec: [§4 Execution/data model](../../spec/grammar.md#4-execution-and-data-model), [§13 Resolution](../../spec/grammar.md#13-resolution-and-lowering)
 
 ## Goal
