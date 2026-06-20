@@ -305,6 +305,14 @@ func interpFlow(fl *model.Flow, fd *ast.Flow, diags *diag.Diagnostics) {
 			switch f.Key {
 			case "on":
 				fl.On = strVal(f.Value)
+				if !fl.Entry && fl.On != "" {
+					diags.Add(diag.Diagnostic{
+						Code:     "AF137",
+						Severity: diag.Warning,
+						Msg:      "on: is only meaningful on entry flow",
+						Pos:      f.Pos,
+					})
+				}
 			case "in":
 				fl.In = scalarVal(f.Value)
 			case "out":
@@ -320,11 +328,6 @@ func interpFlow(fl *model.Flow, fd *ast.Flow, diags *diag.Diagnostics) {
 			fl.Body = append(fl.Body, resolveStep(item.Step, diags))
 		}
 	}
-}
-
-func accountEntryFlow(prog *model.Program, diags *diag.Diagnostics) {
-	_ = prog
-	_ = diags
 }
 
 func refOrStr(v *ast.Value) string {
