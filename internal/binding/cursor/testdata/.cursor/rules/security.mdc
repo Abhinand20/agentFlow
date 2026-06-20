@@ -1,0 +1,6 @@
+---
+description: "AgentFlow agent \"security\" instructions"
+alwaysApply: false
+---
+
+Report security findings.
