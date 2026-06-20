@@ -385,24 +385,38 @@ Known fields interpreted in v0.1: `model`, `in`, `out`, `tools`, `permissions`,
 
 #### 7.3.1 Prompt source
 
-An agent prompt can be supplied in one of two ways:
+An agent prompt can be supplied three ways. `prompt:` is overloaded: it accepts
+either inline text **or** a path to a markdown file.
 
 | Field | Meaning |
 |-------|---------|
-| `prompt: "..."` | Inline prompt text, useful for short agents and examples. |
-| `prompt-file: "relative/path.md"` | Read prompt text from a UTF-8 text/markdown file. The path is resolved relative to the `.af` file that declares the agent. |
+| `prompt: "Implement the change."` | Inline prompt text, useful for short agents and examples. |
+| `prompt: "prompts/reviewer.md"` | A path to a UTF-8 markdown prompt file (see detection rule below). The file content becomes the prompt. |
+| `prompt-file: "prompts/reviewer.md"` | Explicit file form — always a path; never interpreted as inline text. |
+
+**Path detection for `prompt:`** — a `prompt:` value is treated as a **file path**
+when it ends with `.md` (case-insensitive). Any other value is inline text. This
+is the only heuristic; it keeps the common case (inline text) unambiguous while
+making the file case ergonomic without a second field name. Use `prompt-file:`
+when you want to force file semantics regardless of the value.
 
 Rules:
 
 1. `prompt` and `prompt-file` are mutually exclusive (`AF211`).
-2. `prompt-file` must be a relative path, must stay under the source file's
-   directory, and must exist at compile time (`AF211`).
-3. The prompt file content is copied into the semantic model/IR before rendering;
-   generated host artifacts do not depend on the original file at runtime.
-4. Output-protocol instructions (section 9) are appended after resolving the
-   final prompt text, whether it came from `prompt` or `prompt-file`.
-5. Environment references such as `${NAME}` inside prompt files are preserved for
-   bindings; AgentFlow does not expand them during parsing or resolution.
+2. A prompt **path** — whether `prompt-file:` or a `.md`-valued `prompt:` — must be
+   a relative path, must stay under the source file's directory, and must exist
+   and be valid UTF-8 at compile time (`AF211`). A `.md`-valued `prompt:` that does
+   **not** resolve to a readable in-tree file is an `AF211` error, not a silent
+   fallback to inline text.
+3. Path resolution is relative to the `.af` file that declares the agent.
+4. The resolved prompt text (inline or file content) is copied into the semantic
+   model/IR before rendering; generated host artifacts do not depend on the
+   original file at runtime.
+5. Output-protocol instructions (section 9) are appended after resolving the
+   final prompt text, whatever its source.
+6. Environment references such as `${NAME}` inside prompt text or files are
+   preserved for bindings; AgentFlow does not expand them during parsing or
+   resolution.
 
 ### 7.4 `gate`
 
@@ -631,8 +645,9 @@ source
   `return:` is omitted, the default terminal producer (§4.4 Rule 0) must exist and
   carry a typed/text output, else `AF209` (ambiguous or missing default return)
 - `AF210` branch-terminal flows: each leaf output type matches flow `out:`
-- `AF211` prompt source invalid (`prompt` + `prompt-file`, unsafe/missing path,
-  unreadable file, or invalid UTF-8)
+- `AF211` prompt source invalid (`prompt` + `prompt-file` together; a prompt path
+  — `prompt-file:` or a `.md`-valued `prompt:` — that is absolute, escapes the
+  source directory, is missing, unreadable, or invalid UTF-8)
 
 Validation runs **after** inlining.
 
@@ -668,6 +683,8 @@ default `return:`, but `review.af` remains the regold anchor):
   with `parallel { ... } gather`.
 - [examples/critic.af](../examples/critic.af) — generator/critic refinement with
   `repeat { ... } until`.
+- [examples/docs.af](../examples/docs.af) — prompts loaded from markdown files via
+  both the `prompt:` path form and explicit `prompt-file:` (§7.3.1).
 
 ---
 

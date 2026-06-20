@@ -1,0 +1,26 @@
+# Architecture: short documentation pipeline.
+# Demonstrates: prompts loaded from markdown files.
+#   - `outline` uses the overloaded `prompt:` path form (value ends in `.md`).
+#   - `draft` uses the explicit `prompt-file:` form.
+# Both are equivalent; the file content becomes the prompt at compile time.
+
+use anthropic {
+  kind: model-provider
+  models: [opus, sonnet, haiku]
+}
+
+agent outline {
+  model: haiku
+  prompt: "prompts/outline.md"
+}
+
+agent draft {
+  model: sonnet
+  prompt-file: "prompts/draft.md"
+}
+
+entry flow docs {
+  on: "/docs"
+  in: Feature
+  outline -> draft
+}

@@ -49,6 +49,10 @@ and neutral frontmatter values. Host-agnostic **"what to say"** layer; bindings
   ("outputs from lint, security, style") to gather step.
 - **Gate renderer:** run script; on failure `GotoStep(onFailTarget)` per `halt|retry|goto|enter-loop`;
   never emit "bounce-back".
+- **Prompt body:** use the agent's **already-resolved** prompt text from the model
+  (M2 read any `prompt:`/`prompt-file:` path into `Prompt`); render never touches
+  the filesystem, so file- and inline-sourced prompts render identically. `${NAME}`
+  stays unexpanded for bindings.
 - **Output protocol (§9):** append to agent prompts:
   - fence tag exactly `agentflow-output`
   - single line `out: <enum-member>`

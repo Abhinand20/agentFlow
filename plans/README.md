@@ -10,10 +10,12 @@ reference this file. Regold tests when it changes.
 **Supplementary architecture fixtures (Level A):**
 [../examples/pipeline.af](../examples/pipeline.af) (sequential),
 [../examples/research.af](../examples/research.af) (supervisor/worker fan-out),
-[../examples/critic.af](../examples/critic.af) (generator/critic). These exercise
-the two v0.1 ergonomic sugars — `repeat { ... } until` (do-while) and **default
-`return:`** (terminal producer, spec §4.4 Rule 0) — and get golden AST/IR/render
-snapshots alongside `review.af`. `review.af` remains the regold anchor.
+[../examples/critic.af](../examples/critic.af) (generator/critic), and
+[../examples/docs.af](../examples/docs.af) (prompts from markdown files). These
+exercise the v0.1 ergonomic features — `repeat { ... } until` (do-while), **default
+`return:`** (terminal producer, spec §4.4 Rule 0), and **prompt-as-path** in the
+`prompt:` field (spec §7.3.1) — and get golden AST/IR/render snapshots alongside
+`review.af`. `review.af` remains the regold anchor.
 
 Stack: Go + `github.com/alecthomas/participle/v2`. Binary `af`.
 
@@ -128,6 +130,8 @@ examples/review.af             # §14 golden program (regold anchor)
 examples/pipeline.af           # sequential pipeline (Level A)
 examples/research.af           # supervisor/worker fan-out (Level A)
 examples/critic.af             # generator/critic via repeat (Level A)
+examples/docs.af               # prompts from markdown files (Level A)
+examples/prompts/*.md          # prompt-file / prompt-path sources
 examples/scripts/test.sh
 testdata/                      # AST, IR, render, FS goldens from review.af
 ```

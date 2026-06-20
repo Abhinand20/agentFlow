@@ -36,7 +36,7 @@ are preserved for forward-compatibility.
 - Define `model` types:
   - `Capability{ Name, Kind; Models, Tools []string; Transport, Command string; Args []string; Raw }`
   - `EnumType{ Name; Values []string }`
-  - `Agent{ Name, Model, ModelProvider string; In, Out; Permissions, Prompt; Tools []ToolRef; Retry int; Raw }`
+  - `Agent{ Name, Model, ModelProvider string; In, Out; Permissions, Prompt; PromptPath string; Tools []ToolRef; Retry int; Raw }` (`Prompt` = resolved text; `PromptPath` set when sourced from a file)
   - `Gate{ Name, Run; OnFail GateFailAction; OnFailTarget string; Behavior; ScriptRetry int; Raw }`
   - `GateFailAction` enum: `halt | retry | goto | enter-loop`
   - `Flow{ Name; Entry bool; On, In, Out, Return string; Body []Step; Params []Param }`
@@ -57,6 +57,13 @@ are preserved for forward-compatibility.
   defaulted so render/IR are deterministic.
 - **Gate on-fail:** reject `bounce-back`; parse `halt`, `retry`, `goto`,
   `enter-loop`; require `on-fail-target` for `retry`/`goto`.
+- **Prompt source (spec §7.3.1):** resolve each agent's prompt to final text.
+  `prompt:` is overloaded — a value ending in `.md` (case-insensitive) is a path,
+  anything else is inline text; `prompt-file:` is always a path. Read the file
+  (relative to the `.af` dir, must stay in-tree, UTF-8) and store the resolved
+  text plus a `PromptIsFromFile`/source-path marker on `Agent`. `${NAME}` is left
+  unexpanded. Defer the actual `AF211` diagnostics to M4, but surface the resolved
+  text/marker here so render (M6) never re-reads files.
 - Exactly one `entry flow`; zero or multiple -> diagnostic.
 
 ## Data shapes / snippets

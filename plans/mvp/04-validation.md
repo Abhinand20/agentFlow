@@ -14,7 +14,7 @@ fully expanded graph with control/value labels and gather payloads.
 ## Scope
 
 ### In scope
-- Eleven validation rules below (+ `AF110` resolver fixture documented here).
+- Twelve validation rules below (`AF200`–`AF211`; + `AF110` resolver fixture documented here).
 - One passing and one failing fixture per rule.
 - Golden fixture [examples/review.af](../../examples/review.af) validates clean.
 
@@ -45,6 +45,7 @@ Implement each rule as `func(*model.Program, *flowgraph.Resolved) diag.Diagnosti
 | `AF208` | Ambiguous duplicate implicit control/value labels in same flow scope |
 | `AF209` | `return:` value label exists and matches flow `out:`; when omitted, the default terminal producer (§4.4 Rule 0) exists and carries a typed/text output (else ambiguous/missing default return) |
 | `AF210` | Branch-terminal flow (no `return:`): each leaf step `out:` matches flow `out:` |
+| `AF211` | Prompt source: `prompt` + `prompt-file` together, or a prompt path (`prompt-file:` / `.md`-valued `prompt:`) that is absolute, escapes the source dir, is missing, unreadable, or invalid UTF-8 (spec §7.3.1) |
 
 Also cover resolver `AF110` (ambiguous model) in M2 fixtures; list here for the
 full diagnostic catalog.
@@ -66,6 +67,7 @@ var rules = []Rule{
     ruleDuplicateLabels,     // AF208
     ruleReturnBinding,       // AF209
     ruleBranchTerminalOut,   // AF210
+    rulePromptSource,        // AF211
 }
 ```
 
@@ -78,6 +80,10 @@ var rules = []Rule{
 - `pipeline.af` passes `AF209` with defaulted `return` (terminal producer `edit`).
 - A sequence flow ending in a gate (no typed output) and no explicit `return:`
   fails `AF209` (missing default return).
+- `docs.af` passes `AF211`: `outline` (`prompt:` `.md` path) and `draft`
+  (`prompt-file:`) both resolve to in-tree files.
+- `AF211` failing fixtures: `prompt` + `prompt-file` together; `prompt: "x.md"`
+  pointing at a missing file; a path escaping the source dir.
 
 ## Dependencies
 
