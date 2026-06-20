@@ -1,0 +1,244 @@
+{
+  "Capabilities": {
+    "anthropic": {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null,
+      "Raw": {}
+    }
+  },
+  "Types": {},
+  "Agents": {
+    "analyze": {
+      "Name": "analyze",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Extract the key findings from the research.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "edit": {
+      "Name": "edit",
+      "ModelAlias": "haiku",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "haiku",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Tighten, fix grammar, and proofread the draft.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "research": {
+      "Name": "research",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Gather credible sources and notes on the topic.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "write": {
+      "Name": "write",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Draft the piece from the findings.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    }
+  },
+  "Gates": {},
+  "Flows": {
+    "content": {
+      "Name": "content",
+      "Entry": true,
+      "On": "/write",
+      "In": "Topic",
+      "Out": "",
+      "Return": "",
+      "OutExplicit": false,
+      "ReturnExplicit": false,
+      "Params": null,
+      "Body": [
+        {
+          "Kind": 1,
+          "Ref": "",
+          "Alias": "",
+          "Chain": [
+            {
+              "Kind": 0,
+              "Ref": "research",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "analyze",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "write",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "edit",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            }
+          ],
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        }
+      ]
+    }
+  },
+  "EntryFlow": "content",
+  "Order": [
+    {
+      "Kind": 0,
+      "Name": "anthropic"
+    },
+    {
+      "Kind": 2,
+      "Name": "research"
+    },
+    {
+      "Kind": 2,
+      "Name": "analyze"
+    },
+    {
+      "Kind": 2,
+      "Name": "write"
+    },
+    {
+      "Kind": 2,
+      "Name": "edit"
+    },
+    {
+      "Kind": 4,
+      "Name": "content"
+    }
+  ]
+}

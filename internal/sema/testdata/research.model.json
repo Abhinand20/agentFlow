@@ -1,0 +1,254 @@
+{
+  "Capabilities": {
+    "anthropic": {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null,
+      "Raw": {}
+    }
+  },
+  "Types": {
+    "Report": {
+      "Name": "Report",
+      "Values": [
+        "ready"
+      ]
+    }
+  },
+  "Agents": {
+    "competitor": {
+      "Name": "competitor",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Identify the main competitors and their positioning.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "financial": {
+      "Name": "financial",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Assess revenue model, margins, and financial risks.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "market": {
+      "Name": "market",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Analyze market size, growth, and trends for the topic.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "synthesize": {
+      "Name": "synthesize",
+      "ModelAlias": "opus",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "opus",
+      "In": "",
+      "Out": "Report",
+      "Permissions": "",
+      "Prompt": "Combine the market, competitor, and financial analyses into one report. Report `ready` when complete.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    }
+  },
+  "Gates": {},
+  "Flows": {
+    "research": {
+      "Name": "research",
+      "Entry": true,
+      "On": "/research",
+      "In": "Topic",
+      "Out": "Report",
+      "Return": "",
+      "OutExplicit": true,
+      "ReturnExplicit": false,
+      "Params": null,
+      "Body": [
+        {
+          "Kind": 5,
+          "Ref": "",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": [
+            {
+              "Kind": 0,
+              "Ref": "market",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "competitor",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "financial",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            }
+          ],
+          "Gather": {
+            "Kind": 0,
+            "Ref": "synthesize",
+            "Alias": "report",
+            "Chain": null,
+            "BranchValue": "",
+            "BranchIsIt": false,
+            "Cases": null,
+            "Cond": null,
+            "Max": null,
+            "HasMax": false,
+            "Body": null,
+            "DoWhile": false,
+            "PFork": null,
+            "Gather": null,
+            "Each": null,
+            "CallArgs": null,
+            "CallBlock": null
+          },
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        }
+      ]
+    }
+  },
+  "EntryFlow": "research",
+  "Order": [
+    {
+      "Kind": 0,
+      "Name": "anthropic"
+    },
+    {
+      "Kind": 1,
+      "Name": "Report"
+    },
+    {
+      "Kind": 2,
+      "Name": "market"
+    },
+    {
+      "Kind": 2,
+      "Name": "competitor"
+    },
+    {
+      "Kind": 2,
+      "Name": "financial"
+    },
+    {
+      "Kind": 2,
+      "Name": "synthesize"
+    },
+    {
+      "Kind": 4,
+      "Name": "research"
+    }
+  ]
+}

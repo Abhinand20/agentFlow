@@ -1,0 +1,173 @@
+{
+  "Capabilities": {
+    "anthropic": {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null,
+      "Raw": {}
+    }
+  },
+  "Types": {
+    "Verdict": {
+      "Name": "Verdict",
+      "Values": [
+        "pass",
+        "revise"
+      ]
+    }
+  },
+  "Agents": {
+    "critic": {
+      "Name": "critic",
+      "ModelAlias": "opus",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "opus",
+      "In": "",
+      "Out": "Verdict",
+      "Permissions": "",
+      "Prompt": "Check the SQL for correctness and optimization. Give concrete feedback, then report `pass` or `revise`.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "generate": {
+      "Name": "generate",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "Write or refine the SQL for the request. If reviewer feedback is present above, address it.",
+      "PromptPath": "",
+      "PromptFromFile": false,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "",
+        "OK": false,
+        "Reason": ""
+      },
+      "Raw": {}
+    }
+  },
+  "Gates": {},
+  "Flows": {
+    "sql": {
+      "Name": "sql",
+      "Entry": true,
+      "On": "/sql",
+      "In": "Spec",
+      "Out": "text",
+      "Return": "draft",
+      "OutExplicit": true,
+      "ReturnExplicit": true,
+      "Params": null,
+      "Body": [
+        {
+          "Kind": 4,
+          "Ref": "",
+          "Alias": "",
+          "Chain": null,
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": {
+            "Value": "verdict",
+            "IsIt": false,
+            "Op": "==",
+            "Enum": "pass"
+          },
+          "Max": 3,
+          "HasMax": true,
+          "Body": [
+            {
+              "Kind": 0,
+              "Ref": "generate",
+              "Alias": "draft",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "critic",
+              "Alias": "verdict",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            }
+          ],
+          "DoWhile": true,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        }
+      ]
+    }
+  },
+  "EntryFlow": "sql",
+  "Order": [
+    {
+      "Kind": 0,
+      "Name": "anthropic"
+    },
+    {
+      "Kind": 1,
+      "Name": "Verdict"
+    },
+    {
+      "Kind": 2,
+      "Name": "generate"
+    },
+    {
+      "Kind": 2,
+      "Name": "critic"
+    },
+    {
+      "Kind": 4,
+      "Name": "sql"
+    }
+  ]
+}

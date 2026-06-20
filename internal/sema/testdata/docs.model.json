@@ -1,0 +1,156 @@
+{
+  "Capabilities": {
+    "anthropic": {
+      "Name": "anthropic",
+      "Kind": "model-provider",
+      "Models": [
+        "opus",
+        "sonnet",
+        "haiku"
+      ],
+      "Tools": null,
+      "Transport": "",
+      "Command": "",
+      "Args": null,
+      "Raw": {}
+    }
+  },
+  "Types": {},
+  "Agents": {
+    "draft": {
+      "Name": "draft",
+      "ModelAlias": "sonnet",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "sonnet",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "You are a technical writer.\n\nUsing the outline from the previous step, write the documentation:\n\n- Follow the outline's section order exactly.\n- Write clear, example-led prose aimed at a developer audience.\n- Prefer short paragraphs and concrete code or command examples where useful.\n\nReturn the finished markdown document.\n",
+      "PromptPath": "prompts/draft.md",
+      "PromptFromFile": true,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "prompts/draft.md",
+        "OK": true,
+        "Reason": ""
+      },
+      "Raw": {}
+    },
+    "outline": {
+      "Name": "outline",
+      "ModelAlias": "haiku",
+      "ModelProvider": "anthropic",
+      "ResolvedAlias": "haiku",
+      "In": "",
+      "Out": "",
+      "Permissions": "",
+      "Prompt": "You are a documentation planner.\n\nGiven a feature description, produce a concise outline for its documentation:\n\n- A one-line summary of what the feature does.\n- The 3-5 sections the docs should cover, in order.\n- For each section, a single sentence describing its purpose.\n\nKeep the outline tight; do not write the prose yet.\n",
+      "PromptPath": "prompts/outline.md",
+      "PromptFromFile": true,
+      "Tools": null,
+      "Retry": 0,
+      "Description": "",
+      "Resolution": {
+        "Path": "prompts/outline.md",
+        "OK": true,
+        "Reason": ""
+      },
+      "Raw": {}
+    }
+  },
+  "Gates": {},
+  "Flows": {
+    "docs": {
+      "Name": "docs",
+      "Entry": true,
+      "On": "/docs",
+      "In": "Feature",
+      "Out": "",
+      "Return": "",
+      "OutExplicit": false,
+      "ReturnExplicit": false,
+      "Params": null,
+      "Body": [
+        {
+          "Kind": 1,
+          "Ref": "",
+          "Alias": "",
+          "Chain": [
+            {
+              "Kind": 0,
+              "Ref": "outline",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            },
+            {
+              "Kind": 0,
+              "Ref": "draft",
+              "Alias": "",
+              "Chain": null,
+              "BranchValue": "",
+              "BranchIsIt": false,
+              "Cases": null,
+              "Cond": null,
+              "Max": null,
+              "HasMax": false,
+              "Body": null,
+              "DoWhile": false,
+              "PFork": null,
+              "Gather": null,
+              "Each": null,
+              "CallArgs": null,
+              "CallBlock": null
+            }
+          ],
+          "BranchValue": "",
+          "BranchIsIt": false,
+          "Cases": null,
+          "Cond": null,
+          "Max": null,
+          "HasMax": false,
+          "Body": null,
+          "DoWhile": false,
+          "PFork": null,
+          "Gather": null,
+          "Each": null,
+          "CallArgs": null,
+          "CallBlock": null
+        }
+      ]
+    }
+  },
+  "EntryFlow": "docs",
+  "Order": [
+    {
+      "Kind": 0,
+      "Name": "anthropic"
+    },
+    {
+      "Kind": 2,
+      "Name": "outline"
+    },
+    {
+      "Kind": 2,
+      "Name": "draft"
+    },
+    {
+      "Kind": 4,
+      "Name": "docs"
+    }
+  ]
+}
