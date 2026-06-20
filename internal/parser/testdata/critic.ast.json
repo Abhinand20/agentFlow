@@ -1,0 +1,322 @@
+{
+  "Decls": [
+    {
+      "Use": {
+        "Name": {
+          "Parts": [
+            "anthropic"
+          ]
+        },
+        "Alias": null,
+        "Fields": [
+          {
+            "Key": "kind",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "model-provider"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "models",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "List": null,
+                    "Ref": {
+                      "Parts": [
+                        "opus"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "List": null,
+                    "Ref": {
+                      "Parts": [
+                        "sonnet"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "List": null,
+                    "Ref": {
+                      "Parts": [
+                        "haiku"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": {
+        "Name": "Verdict",
+        "Values": [
+          "pass",
+          "revise"
+        ]
+      },
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "generate",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "sonnet"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Write or refine the SQL for the request. If reviewer feedback is present above, address it.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "critic",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "opus"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "out",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "Verdict"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Check the SQL for correctness and optimization. Give concrete feedback, then report `pass` or `revise`.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": {
+        "Entry": true,
+        "Name": "sql",
+        "Params": null,
+        "Items": [
+          {
+            "Field": {
+              "Key": "on",
+              "Value": {
+                "Bool": null,
+                "Str": "/sql",
+                "Num": null,
+                "List": null,
+                "Ref": null
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "in",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Spec"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "out",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "text"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "return",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "draft"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": null,
+              "Branch": null,
+              "Loop": null,
+              "Repeat": {
+                "Body": [
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "generate"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": "draft"
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  },
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "critic"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": "verdict"
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  }
+                ],
+                "Cond": {
+                  "Value": {
+                    "It": false,
+                    "Name": {
+                      "Parts": [
+                        "verdict"
+                      ]
+                    }
+                  },
+                  "Op": "==",
+                  "Enum": "pass"
+                },
+                "Max": 3
+              },
+              "Chain": null
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

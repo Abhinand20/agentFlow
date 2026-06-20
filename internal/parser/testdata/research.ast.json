@@ -1,0 +1,393 @@
+{
+  "Decls": [
+    {
+      "Use": {
+        "Name": {
+          "Parts": [
+            "anthropic"
+          ]
+        },
+        "Alias": null,
+        "Fields": [
+          {
+            "Key": "kind",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "model-provider"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "models",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": {
+                "Items": [
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "List": null,
+                    "Ref": {
+                      "Parts": [
+                        "opus"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "List": null,
+                    "Ref": {
+                      "Parts": [
+                        "sonnet"
+                      ]
+                    }
+                  },
+                  {
+                    "Bool": null,
+                    "Str": null,
+                    "Num": null,
+                    "List": null,
+                    "Ref": {
+                      "Parts": [
+                        "haiku"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": {
+        "Name": "Report",
+        "Values": [
+          "ready"
+        ]
+      },
+      "Agent": null,
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "market",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "sonnet"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Analyze market size, growth, and trends for the topic.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "competitor",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "sonnet"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Identify the main competitors and their positioning.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "financial",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "sonnet"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Assess revenue model, margins, and financial risks.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": {
+        "Name": "synthesize",
+        "Fields": [
+          {
+            "Key": "model",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "opus"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "out",
+            "Value": {
+              "Bool": null,
+              "Str": null,
+              "Num": null,
+              "List": null,
+              "Ref": {
+                "Parts": [
+                  "Report"
+                ]
+              }
+            }
+          },
+          {
+            "Key": "prompt",
+            "Value": {
+              "Bool": null,
+              "Str": "Combine the market, competitor, and financial analyses into one report. Report `ready` when complete.",
+              "Num": null,
+              "List": null,
+              "Ref": null
+            }
+          }
+        ]
+      },
+      "Gate": null,
+      "Flow": null
+    },
+    {
+      "Use": null,
+      "Type": null,
+      "Agent": null,
+      "Gate": null,
+      "Flow": {
+        "Entry": true,
+        "Name": "research",
+        "Params": null,
+        "Items": [
+          {
+            "Field": {
+              "Key": "on",
+              "Value": {
+                "Bool": null,
+                "Str": "/research",
+                "Num": null,
+                "List": null,
+                "Ref": null
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "in",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Topic"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": {
+              "Key": "out",
+              "Value": {
+                "Bool": null,
+                "Str": null,
+                "Num": null,
+                "List": null,
+                "Ref": {
+                  "Parts": [
+                    "Report"
+                  ]
+                }
+              }
+            },
+            "Step": null
+          },
+          {
+            "Field": null,
+            "Step": {
+              "Parallel": {
+                "Each": null,
+                "Body": [
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "market"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  },
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "competitor"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  },
+                  {
+                    "Parallel": null,
+                    "Branch": null,
+                    "Loop": null,
+                    "Repeat": null,
+                    "Chain": {
+                      "Atoms": [
+                        {
+                          "Name": {
+                            "Parts": [
+                              "financial"
+                            ]
+                          },
+                          "Args": null,
+                          "Block": null,
+                          "Alias": null
+                        }
+                      ],
+                      "Attr": null
+                    }
+                  }
+                ],
+                "Gather": {
+                  "Name": {
+                    "Parts": [
+                      "synthesize"
+                    ]
+                  },
+                  "Args": null,
+                  "Block": null,
+                  "Alias": "report"
+                }
+              },
+              "Branch": null,
+              "Loop": null,
+              "Repeat": null,
+              "Chain": null
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
