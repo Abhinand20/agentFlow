@@ -105,11 +105,97 @@ func interpType(et *model.EnumType, td *ast.TypeDecl, diags *diag.Diagnostics) {
 }
 
 func interpAgent(ag *model.Agent, fields []*ast.Field, diags *diag.Diagnostics) {
+	if ag.Raw == nil {
+		ag.Raw = make(map[string]*ast.Value)
+	}
+	hasModel := false
 	for _, f := range fields {
-		if f.Key == "model" {
+		switch f.Key {
+		case "model":
 			ag.ModelAlias = refOrStr(f.Value)
+			hasModel = true
+		case "in":
+			ag.In = scalarVal(f.Value)
+		case "out":
+			ag.Out = scalarVal(f.Value)
+		case "tools":
+			ag.Tools = toolRefs(f.Value)
+		case "permissions":
+			ag.Permissions = strVal(f.Value)
+		case "retry":
+			n, ok := intVal(f.Value)
+			if !ok || n < 0 {
+				diags.Add(diag.Diagnostic{
+					Code:     "AF000",
+					Severity: diag.Error,
+					Msg:      "retry must be a non-negative integer",
+					Pos:      f.Pos,
+				})
+			} else {
+				ag.Retry = n
+			}
+		case "prompt":
+			ag.Prompt = strVal(f.Value)
+		case "prompt-file":
+			if f.Value != nil && f.Value.Str != nil {
+				ag.PromptPath = *f.Value.Str
+			}
+		case "description":
+			ag.Description = strVal(f.Value)
+		default:
+			diags.Add(diag.Diagnostic{
+				Code:     "AF120",
+				Severity: diag.Warning,
+				Msg:      "unknown field " + f.Key,
+				Pos:      f.Pos,
+			})
+			ag.Raw[f.Key] = f.Value
 		}
 	}
+	if !hasModel {
+		diags.Add(diag.Diagnostic{
+			Code:     "AF132",
+			Severity: diag.Error,
+			Msg:      "agent requires a model",
+			Pos:      ag.Pos,
+		})
+	}
+}
+
+func toolRefs(v *ast.Value) []model.ToolRef {
+	if v == nil || v.List == nil {
+		return nil
+	}
+	var out []model.ToolRef
+	for _, item := range v.List.Items {
+		if item.Ref == nil {
+			continue
+		}
+		raw := qualNameStr(item.Ref)
+		capName, toolName := raw, ""
+		if parts := item.Ref.Parts; len(parts) >= 2 {
+			capName = parts[0]
+			toolName = parts[1]
+		}
+		out = append(out, model.ToolRef{
+			Capability: capName,
+			Tool:       toolName,
+			Raw:        raw,
+			Pos:        item.Pos,
+		})
+	}
+	return out
+}
+
+func intVal(v *ast.Value) (int, bool) {
+	if v == nil || v.Num == nil {
+		return 0, false
+	}
+	n := *v.Num
+	if n != float64(int(n)) {
+		return 0, false
+	}
+	return int(n), true
 }
 
 func interpGate(g *model.Gate, fields []*ast.Field, diags *diag.Diagnostics) {
