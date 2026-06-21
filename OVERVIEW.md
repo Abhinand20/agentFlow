@@ -142,6 +142,7 @@ compositions, not keywords:
 | Supervisor / worker fan-out | [examples/research.af](examples/research.af) | `parallel { ... } gather` |
 | Generator / critic | [examples/critic.af](examples/critic.af) | `repeat { ... } until` |
 | Review + ship (all of the above) | [examples/review.af](examples/review.af) | subflow, gate, branch, loop |
+| CL review (dogfooded, Cursor models) | [examples/cl-review.af](examples/cl-review.af) | `a -> b`, `use cursor` model-provider |
 
 ---
 
@@ -161,11 +162,16 @@ flowchart LR
   bind --> files["host config + markdown"]
 ```
 
+The `af` CLI drives the front of this pipeline today (`af validate`, `af graph`,
+`af build --target cursor`, `af build --emit-ir`). The Cursor binding is the
+shipped back end; Claude Code is next.
+
 ### Run time
 
-User types `/ship TICKET-123`. The host orchestrator follows the generated runbook,
-dispatches subagents, parses `agentflow-output` blocks, and enforces gates via
-hooks where supported.
+User types `/ship TICKET-123` (or `/cl-review <PR>`). The host orchestrator
+follows the generated runbook, dispatches the native subagents, parses
+`agentflow-output` blocks, and enforces gates via hooks where supported (advisory
+on Cursor today).
 
 ### Output protocol (summary)
 
@@ -183,13 +189,16 @@ Parse failure → retry up to `retry:` → halt. Details: [spec §9](spec/gramma
 
 ## Host capability matrix
 
-| Capability | Claude Code (MVP) | Cursor (M10) | SDK (M15) |
-|------------|-------------------|--------------|-----------|
+Status: **Cursor — shipped** (native subagents); **Claude Code — planned (M7)**;
+**SDK — post-MVP (M15)**.
+
+| Capability | Cursor (shipped) | Claude Code (M7) | SDK (M15) |
+|------------|------------------|------------------|-----------|
 | Slash command | yes | yes | CLI |
-| Named subagents | yes | yes | yes |
-| MCP emission | yes | yes | yes |
-| Blocking gates | hooks | advisory | hard |
-| Parallel spawn | advisory | advisory | hard |
+| Named subagents | yes (`.cursor/agents/*.md`) | yes | yes |
+| MCP emission | yes (`.cursor/mcp.json`) | yes | yes |
+| Blocking gates | advisory (`AF303`) | hooks | hard |
+| Parallel spawn | advisory (`AF300`) | advisory | hard |
 | Deterministic control flow | no | no | yes |
 
 Full matrix: [spec §11](spec/grammar.md#11-host-capability-matrix-v01).
@@ -206,5 +215,9 @@ Details: [spec §12](spec/grammar.md#12-runtime-guarantees-by-target).
 
 ## Status
 
-Spec tightened around data flow and language levels. Implementation planned in
-[plans/](plans/); canonical fixture at [examples/review.af](examples/review.af).
+The MVP pipeline is **working end to end for Cursor**: the `af` CLI parses,
+resolves, inlines, validates, lowers to IR, renders, and binds
+[examples/review.af](examples/review.af) into a `.cursor/` config, covered by
+golden + end-to-end tests. Claude Code binding (M7) and config import (M17) are
+the next steps; full roadmap in [WALKTHROUGH.md §6](WALKTHROUGH.md#6-after-the-mvp-future-extensions)
+and [plans/](plans/).

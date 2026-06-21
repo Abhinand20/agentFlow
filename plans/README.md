@@ -11,12 +11,14 @@ reference this file. Regold tests when it changes.
 [../examples/pipeline.af](../examples/pipeline.af) (sequential),
 [../examples/cl-review.af](../examples/cl-review.af) (CL review: reviewer → executor),
 [../examples/research.af](../examples/research.af) (supervisor/worker fan-out),
-[../examples/critic.af](../examples/critic.af) (generator/critic), and
-[../examples/docs.af](../examples/docs.af) (prompts from markdown files). These
-exercise the v0.1 ergonomic features — `repeat { ... } until` (do-while), **default
-`return:`** (terminal producer, spec §4.4 Rule 0), and **prompt-as-path** in the
-`prompt:` field (spec §7.3.1) — and get golden AST/IR/render snapshots alongside
-`review.af`. `review.af` remains the regold anchor.
+[../examples/critic.af](../examples/critic.af) (generator/critic),
+[../examples/docs.af](../examples/docs.af) (prompts from markdown files), and
+[../examples/cl-review.af](../examples/cl-review.af) (dogfooded CL-review pipeline
+with `use cursor` model bindings). These exercise the v0.1 ergonomic features —
+`repeat { ... } until` (do-while), **default `return:`** (terminal producer, spec
+§4.4 Rule 0), **prompt-as-path** in the `prompt:` field (spec §7.3.1), and host
+**model-provider** bindings (spec §8) — and get golden AST/IR/render snapshots
+alongside `review.af`. `review.af` remains the regold anchor.
 
 Stack: Go + `github.com/alecthomas/participle/v2`. Binary `af`.
 
@@ -51,36 +53,38 @@ and references to `examples/review.af` where applicable.
 
 ## Status legend
 
-`Planned` | `In progress` | `Done` — all currently **Planned**.
+`Planned` | `In progress` | `Done`. The MVP is **working end to end for Cursor**:
+M0–M6, M8, and M10 are **Done**; M7 (Claude binding) is the next target.
 
 ## Index
 
 ### MVP (v0.1) — Level A
 
-| # | Doc | Delivers |
-|---|-----|----------|
-| M0 | [00 - Foundations](mvp/00-foundations.md) | diag, emit FS, binding interface |
-| M1 | [01 - Lexer & Parser](mvp/01-lexer-and-parser.md) | AST, no semicolons |
-| M2 | [02 - Resolver & Model](mvp/02-resolver-and-model.md) | model, §8 models, gate on-fail, `return:` |
-| M3 | [03 - Inline & Normalize](mvp/03-inline-and-normalize.md) | control/value labels, gather payloads, return wiring |
-| M4 | [04 - Validation](mvp/04-validation.md) | AF200–AF210 |
-| M5 | [05 - IR](mvp/05-ir.md) | JSON IR + data model metadata |
-| M6 | [06 - Rendering Layer](mvp/06-rendering-layer.md) | runbook + §9 protocol text |
-| M7 | [07 - Claude Code Binding](mvp/07-binding-claude-code.md) | `.claude/` + §11/§12 tiers |
-| M8 | [08 - CLI & E2E](mvp/08-cli-and-e2e.md) | `af` CLI + MVP done |
+| # | Doc | Delivers | Status |
+|---|-----|----------|--------|
+| M0 | [00 - Foundations](mvp/00-foundations.md) | diag, emit FS, binding interface | ✅ Done |
+| M1 | [01 - Lexer & Parser](mvp/01-lexer-and-parser.md) | AST, no semicolons | ✅ Done |
+| M2 | [02 - Resolver & Model](mvp/02-resolver-and-model.md) | model, §8 models, gate on-fail, `return:` | ✅ Done |
+| M3 | [03 - Inline & Normalize](mvp/03-inline-and-normalize.md) | control/value labels, gather payloads, return wiring | ✅ Done |
+| M4 | [04 - Validation](mvp/04-validation.md) | AF200–AF210 | ✅ Done |
+| M5 | [05 - IR](mvp/05-ir.md) | JSON IR + data model metadata | ✅ Done |
+| M6 | [06 - Rendering Layer](mvp/06-rendering-layer.md) | runbook + §9 protocol text | ✅ Done |
+| M7 | [07 - Claude Code Binding](mvp/07-binding-claude-code.md) | `.claude/` + §11/§12 tiers | ⏳ Planned (next) |
+| M8 | [08 - CLI & E2E](mvp/08-cli-and-e2e.md) | `af` CLI + MVP done (Cursor path) | ✅ Done |
 
 ### Post-MVP
 
-| # | Doc | Version |
-|---|-----|---------|
-| M9 | [09 - Abstraction & std/patterns](post-mvp/09-abstraction-and-stdlib.md) | v0.2 Level B |
-| M10 | [10 - Cursor & Negotiation](post-mvp/10-cursor-and-negotiation.md) | v0.2 |
-| M11 | [11 - Registry, Formatter, Diagnostics](post-mvp/11-registry-formatter-diagnostics.md) | v0.2 |
-| M12 | [12 - Records & Multi-output](post-mvp/12-records-and-multi-output.md) | v0.3 Level C |
-| M13 | [13 - Policies & Metering](post-mvp/13-policies-and-metering.md) | v0.4 |
-| M14 | [14 - Plan IR & Simulator](post-mvp/14-plan-ir-and-simulator.md) | v0.5 |
-| M15 | [15 - SDK Runtime](post-mvp/15-sdk-runtime.md) | v0.5+ |
-| M16 | [16 - LSP](post-mvp/16-lsp.md) | v0.5+ |
+| # | Doc | Version | Status |
+|---|-----|---------|--------|
+| M9 | [09 - Abstraction & std/patterns](post-mvp/09-abstraction-and-stdlib.md) | v0.2 Level B | Planned |
+| M10 | [10 - Cursor & Negotiation](post-mvp/10-cursor-and-negotiation.md) | v0.2 | ✅ Done (native subagents) |
+| M11 | [11 - Registry, Formatter, Diagnostics](post-mvp/11-registry-formatter-diagnostics.md) | v0.2 | Planned |
+| M12 | [12 - Records & Multi-output](post-mvp/12-records-and-multi-output.md) | v0.3 Level C | Planned |
+| M13 | [13 - Policies & Metering](post-mvp/13-policies-and-metering.md) | v0.4 | Planned |
+| M14 | [14 - Plan IR & Simulator](post-mvp/14-plan-ir-and-simulator.md) | v0.5 | Planned |
+| M15 | [15 - SDK Runtime](post-mvp/15-sdk-runtime.md) | v0.5+ | Planned |
+| M16 | [16 - LSP](post-mvp/16-lsp.md) | v0.5+ | Planned |
+| M17 | [17 - Config Import & Round-Trip](post-mvp/17-config-import-and-roundtrip.md) | v0.6+ | Planned |
 
 ## Compile pipeline
 
@@ -106,6 +110,9 @@ flowchart TD
   M9 --> M12 --> M13
   M8 --> M11 --> M16
   M5 --> M14 --> M15
+  M5 --> M17
+  M11 --> M17
+  M7 --> M17
 ```
 
 ## Target Go package layout
@@ -122,9 +129,10 @@ internal/flowgraph/          # StepInstance, value labels, GatherPayload, label 
 internal/ir/
 internal/render/             # protocol.go, runbook.go
 internal/binding/claude/
-internal/binding/cursor/     # M10
+internal/binding/cursor/     # M10 (done)
 internal/binding/capability.go
-internal/binding/dot/
+internal/dot/                  # DOT emitter for af graph (M8)
+internal/pipeline/             # Compile() shared entry point (M8)
 internal/plan/                 # M14
 internal/sim/                  # M14
 examples/review.af             # §14 golden program (regold anchor)
@@ -133,6 +141,8 @@ examples/cl-review.af          # CL review pipeline: reviewer -> executor (Level
 examples/research.af           # supervisor/worker fan-out (Level A)
 examples/critic.af             # generator/critic via repeat (Level A)
 examples/docs.af               # prompts from markdown files (Level A)
+examples/cl-review.af          # dogfooded CL-review pipeline, use cursor models (Level A)
+internal/unparse/              # IR -> .af printer for af import (M17)
 examples/prompts/*.md          # prompt-file / prompt-path sources
 examples/scripts/test.sh
 testdata/                      # AST, IR, render, FS goldens from review.af

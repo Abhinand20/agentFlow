@@ -14,8 +14,10 @@
 You write a single `.af` file describing a team of AI agents — who they are, what
 tools they have, what typed output they produce, and how they hand work to each
 other. AgentFlow **compiles** that file into the native configuration your host
-needs (Claude Code first; **Cursor binding also available** — see M10), including a slash
-command like `/ship` that runs the whole team.
+needs, including a slash command like `/ship` that runs the whole team. Today the
+**Cursor** target works end to end through the `af` CLI (`af build --target cursor`
+emits native subagents, a slash command, and `mcp.json`); **Claude Code** is the
+next binding.
 
 The key mental model:
 
@@ -63,19 +65,21 @@ flowchart LR
   inline --> validate["validate (M4)"]
   validate --> ir["IR (M5)"]
   ir --> render["render (M6)"]
-  render --> bind["host binding (M7/M10)"]
+  render --> bind["host binding (M10 Cursor ✓ / M7 Claude)"]
   bind --> files["host config + markdown"]
-  cli["af CLI (M8)"] -.drives.-> parse
+  cli["af CLI (M8) ✓"] -.drives.-> parse
 ```
 
 Each stage only consumes the output of the one before it. That's why the
 milestones are numbered the way they are — they build the pipeline front to back.
 
-**Where the build stands today:** M0–M6 are **done** (parse through render). **M10 Cursor
-binding** (lean cut, PR #10) assembles `.cursor/` from IR + render but is not yet wired
-to the CLI. **M7 Claude binding** and **M8 CLI** (`af validate`, `af build`, `af graph`)
-are still planned — they complete the MVP path for Claude Code and expose Cursor via
-`af build --target cursor`.
+**Where the build stands today:** the whole pipeline is **wired end to end for
+Cursor.** M0–M6 (parse through render) are **done**, **M10 Cursor binding** is
+**done** (native subagents, command, `mcp.json`), and **M8 CLI** is **done** —
+`af validate`, `af graph`, and `af build --target cursor` run `examples/review.af`
+through to a working `.cursor/` config, with golden + end-to-end tests green. The
+remaining MVP item is **M7 Claude binding** (`af build --target claude-code`), which
+reuses the same IR and render layers.
 
 ---
 
@@ -185,7 +189,46 @@ natural-language text that lands in generated markdown:
 
 Render decides *what to say*; bindings decide *where to put it*.
 
-### M7 — Claude Code Binding · ⏳ Planned
+### M10 — Cursor Binding · ✅ Done (native subagents)
+
+**What it builds:** assembles render output into `.cursor/commands/`, `.cursor/agents/*.md`
+(native Cursor subagents), and `.cursor/mcp.json`. Each agent becomes a subagent file with
+`name`/`description`/`model` (+ optional `readonly`) frontmatter; blocking gates use advisory
+fallbacks with `AF3xx` warnings, and parallel spawn maps to advisory parallel Task wording.
+(The lean first cut shipped `.cursor/rules/*.mdc`; it has since been migrated to native
+subagents.)
+
+- `internal/binding/cursor/` — **done**; wired to the CLI via `af build --target cursor`.
+
+It also honors `use cursor { kind: model-provider, models: [...] }`, mapping symbolic
+aliases (e.g. `opus-4-8`, `composer-2-5-fast`) to host model ids in the subagent
+frontmatter (spec §8).
+
+**Remaining polish (not blocking):** `.cursor/hooks.json` for hard gates and a shared
+negotiation framework — see
+[implementation-plans/2026-06-20-m10-cursor-subagents.md](implementation-plans/2026-06-20-m10-cursor-subagents.md).
+
+### M8 — CLI & End-to-End · ✅ Done (Cursor path)
+
+**What it builds:** wires the whole pipeline behind the `af` binary and proves the
+MVP works end to end.
+
+- `cmd/af/` — `af validate`, `af graph`, `af build --target cursor` (plus
+  `--emit-ir` and `--out`); bindings self-register via `cmd/af/bindings.go`.
+- `internal/pipeline.Compile(path)` — the single entry point running parse →
+  resolve → inline → validate → IR, shared by the CLI and tests.
+
+**MVP "definition of done" — met for Cursor** (all pass on `examples/review.af`):
+- `af validate` — zero errors,
+- `af graph` — DOT with prefixed subflow labels and gather edges,
+- `af build --target cursor` — produces the `.cursor/` config,
+- the runbook implements the §9 output protocol and gate retry-to-`build`,
+- the E2E test is green (in-process golden tree + real-binary CLI contract), with
+  all goldens tied to the canonical file.
+
+The one remaining target is `af build --target claude-code`, which lands with M7.
+
+### M7 — Claude Code Binding · ⏳ Planned (next)
 
 **What it builds:** assembles the render output into a working `.claude/`
 directory:
@@ -194,39 +237,10 @@ directory:
   `.mcp.json`, settings/hooks.
 
 Typing `/ship` then runs the flow via the native runbook (best-effort control
-flow), with **hook-enforced blocking gates** where the host supports them.
-
-> **Note:** Cursor binding (M10 lean cut) landed first in PR #10; Claude (M7) is
-> still the MVP primary target per the original milestone order.
-
-### M10 — Cursor Binding · 🔶 Partial (lean cut + native subagents)
-
-**What it builds:** assembles render output into `.cursor/commands/`, `.cursor/agents/*.md`
-(native Cursor subagents), and `.cursor/mcp.json`. Each agent becomes a subagent file with
-`name`/`description`/`model` frontmatter; blocking gates use advisory fallbacks with `AF3xx`
-warnings, and parallel spawn maps to advisory parallel Task wording. (The lean first cut
-shipped `.cursor/rules/*.mdc`; it has since been migrated to native subagents.)
-
-- `internal/binding/cursor/` — **done** in PR #10; not yet exposed via CLI.
-
-**Remaining:** hooks.json, shared negotiation framework, `BUILD-NOTES.md` — see
-[implementation-plans/2026-06-20-m10-cursor-subagents.md](implementation-plans/2026-06-20-m10-cursor-subagents.md).
-
-### M8 — CLI & End-to-End · ⏳ Planned
-
-**What it builds:** wires the whole pipeline behind the `af` binary and proves the
-MVP works end to end.
-
-- `cmd/af/` — `af validate`, `af build --target claude-code|cursor`, `af graph`.
-- A `pipeline.Compile(path)` that runs parse → resolve → inline → validate → IR.
-
-**MVP "definition of done"** (all must pass on `examples/review.af`):
-- `af validate` — zero errors,
-- `af graph` — DOT with prefixed subflow labels and gather edges,
-- `af build --target claude-code` — produces the `.claude/` config (after M7),
-- `af build --target cursor` — produces the `.cursor/` config (binding ready),
-- the runbook implements the §9 output protocol and gate retry-to-`build`,
-- the E2E test is green, with all goldens tied to the one canonical file.
+flow), with **hook-enforced blocking gates** where the host supports them. Because
+render (M6) and IR (M5) are host-agnostic, M7 is a new *binding* consuming the same
+IR — no front-end changes. Cursor (M10) shipped first; Claude completes the MVP's
+original primary target.
 
 ---
 
@@ -249,15 +263,16 @@ Walk `examples/review.af` through the finished pipeline to see the pieces connec
 6. **IR (M5)** → a JSON description of agents, the flow graph, and data-flow
    metadata.
 7. **Render (M6)** → runbook prose + agent prompts with `agentflow-output` blocks.
-8. **Bind (M7/M10)** → host config (`.claude/` or `.cursor/`).
-9. **CLI (M8)** → `af build` ties it together.
+8. **Bind (M10 Cursor today; M7 Claude next)** → host config (`.cursor/` or, later,
+   `.claude/`).
+9. **CLI (M8)** → `af build --target cursor` ties it together.
 
-**At runtime (outside AgentFlow):** a developer types `/ship TICKET-123` in Claude
-Code. The host follows the generated runbook: runs `build`, runs the `quality`
+**At runtime (outside AgentFlow):** a developer types `/ship TICKET-123` in the
+host (Cursor today). The host follows the generated runbook: runs `build`, runs the `quality`
 gate (retrying back to `build` on failure), fans out the three reviewers in
 parallel, gathers a verdict, loops up to 3 times while the verdict is `revise`,
 then branches to `deploy` or `notify_author`. Gates are enforced by hooks where
-supported.
+supported (advisory on Cursor today; hook-enforced once the Claude binding lands).
 
 ### The same kernel, many shapes
 
@@ -270,6 +285,7 @@ same small kernel — no new keywords:
 | Supervisor / worker fan-out | [examples/research.af](examples/research.af) | `parallel { … } gather` |
 | Generator / critic | [examples/critic.af](examples/critic.af) | `repeat { … } until` |
 | Review + ship (all of it) | [examples/review.af](examples/review.af) | subflow, gate, branch, loop |
+| CL review (dogfooded, Cursor models) | [examples/cl-review.af](examples/cl-review.af) | `a -> b`, `use cursor` model-provider, `prompt-file` |
 
 `review.af` is the **canonical golden fixture**: the spec, all snapshot tests, and
 the MVP acceptance criteria reference it. Change it → re-gold the tests.
@@ -296,32 +312,57 @@ own milestone:
 
 ---
 
-## 6. After the MVP (M9 onward)
+## 6. After the MVP (future extensions)
 
-Once M0–M8 land, AgentFlow grows along three axes. There's one grammar with three
-semantic levels: **A** (MVP, today), **B** (parses now, enabled in M9), **C**
-(post-MVP new syntax).
+With the Cursor path working end to end, AgentFlow grows along a few axes. There's
+one grammar with three semantic levels: **A** (MVP, today), **B** (parses now,
+enabled in M9), **C** (post-MVP new syntax).
+
+### Near-term extensions
+
+These build directly on the working compiler and are the immediate priorities:
+
+- **Claude Code binding (M7)** — `af build --target claude-code` emits a `.claude/`
+  tree (commands, agents, `.mcp.json`, settings/hooks) from the *same* IR and
+  render layers Cursor already uses, adding **hook-enforced blocking gates**. This
+  is a new binding, not a front-end change.
+- **Config import & round-trip (M17)** — *rebuild AgentFlow configs from
+  pre-defined agents.* Today the compiler is one-way (`.af` → host). `af import
+  --from cursor <dir>` (and `--from claude` after M7) parses an existing
+  `.cursor/`/`.claude/` tree back into a `.af` file via the IR, so teams that
+  already hand-wrote subagents get an editable AgentFlow source instead of a blank
+  file — and a build can be diffed against its source. See
+  [plans/post-mvp/17-config-import-and-roundtrip.md](plans/post-mvp/17-config-import-and-roundtrip.md).
+- **Hard gates on Cursor** — emit `.cursor/hooks.json` so blocking gates stop
+  being advisory, plus a shared `internal/binding/capability.go` negotiation
+  framework reused by every binding.
+- **Multi-host build** — one `af build` pass that emits several targets and a
+  build-notes summary of each host's advisory fallbacks.
+
+### Roadmap
 
 | # | Milestone | Version | What it adds |
 |---|-----------|---------|--------------|
+| M7 | Claude Code Binding | v0.1 | `af build --target claude-code`, hook-enforced gates |
 | M9 | Abstraction & std/patterns | v0.2 (Level B) | flow parameters, calls, `each`, `it`, a `std.patterns` library |
-| M10 | Cursor & Negotiation | v0.2 | **Partial** — lean Cursor binding (PR #10); hooks + shared negotiation remain |
 | M11 | Registry, Formatter, Diagnostics | v0.2 | a component registry, `af fmt`, richer diagnostics |
 | M12 | Records & Multi-output | v0.3 (Level C) | record types, agents with multiple outputs, dotted branches |
 | M13 | Policies & Metering | v0.4 | execution policies and usage metering |
 | M14 | Plan IR & Simulator | v0.5 | a Plan IR, a simulator, and `af test` |
 | M15 | SDK Runtime | v0.5+ | opt-in `--runtime sdk`: a generated deterministic orchestrator with *hard* control flow, gates, parallelism, and loop bounds |
 | M16 | LSP | v0.5+ | editor support — diagnostics, go-to-def, formatting |
+| M17 | Config Import & Round-Trip | v0.6+ | `af import` reconstructs `.af` from a host config; round-trip diffing |
 
-**The throughline — determinism is a spectrum by target.** The MVP's Claude
-binding follows the runbook *best-effort* with hook-enforced gates. The later SDK
-runtime (M15) generates a program that drives the flow *deterministically*. Same
-`.af` source; stronger guarantees as the target improves:
+**The throughline — determinism is a spectrum by target.** The Cursor binding
+follows the runbook *best-effort* with advisory gates; the Claude binding (M7)
+adds hook-enforced gates; the later SDK runtime (M15) generates a program that
+drives the flow *deterministically*. Same `.af` source; stronger guarantees as the
+target improves:
 
-| Capability | Claude Code (MVP) | Cursor (M10) | SDK (M15) |
-|------------|-------------------|--------------|-----------|
+| Capability | Cursor (shipped) | Claude Code (M7) | SDK (M15) |
+|------------|------------------|------------------|-----------|
 | Slash command | yes | yes | CLI |
-| Blocking gates | hooks | advisory | hard |
+| Blocking gates | advisory | hooks | hard |
 | Deterministic control flow | no | no | yes |
 
 **Why the architecture extends cleanly:** the IR (M5) is the stable, binding-agnostic
@@ -335,7 +376,8 @@ needs to know about hosts, and hosts never need to know about syntax.
 
 **Pipeline:** parse → resolve → inline → validate → IR → render → bind.
 
-**Status:** M0–M6 done · M10 Cursor binding (lean) done · M7 + M8 complete the MVP · M9+ post-MVP.
+**Status:** MVP **working end to end for Cursor** (M0–M6, M8, M10 done) · M7 Claude
+binding is the next target · M9+ / M17 are post-MVP.
 
 **Code map:**
 
@@ -348,9 +390,10 @@ needs to know about hosts, and hosts never need to know about syntax.
 | Validation | `internal/validate` | ✅ M4 |
 | IR | `internal/ir` | ✅ M5 |
 | Render | `internal/render` | ✅ M6 |
+| DOT graph | `internal/dot` | ✅ M8 |
+| Cursor binding | `internal/binding/cursor` | ✅ M10 |
+| CLI / pipeline | `cmd/af`, `internal/pipeline` | ✅ M8 |
 | Claude binding | `internal/binding/claude` | ⏳ M7 |
-| Cursor binding | `internal/binding/cursor` | 🔶 M10 lean |
-| CLI / pipeline | `cmd/af`, `internal/pipeline` | ⏳ M8 |
 
 **Docs:** [README.md](README.md) (intro) · [OVERVIEW.md](OVERVIEW.md) (architecture) ·
 [spec/grammar.md](spec/grammar.md) (language) · [plans/](plans/) (milestone detail) ·
