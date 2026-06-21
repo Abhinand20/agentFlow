@@ -199,16 +199,18 @@ flow), with **hook-enforced blocking gates** where the host supports them.
 > **Note:** Cursor binding (M10 lean cut) landed first in PR #10; Claude (M7) is
 > still the MVP primary target per the original milestone order.
 
-### M10 — Cursor Binding · 🔶 Partial (lean cut)
+### M10 — Cursor Binding · 🔶 Partial (lean cut + native subagents)
 
-**What it builds:** assembles render output into `.cursor/commands/`, `.cursor/rules/*.mdc`,
-and `.cursor/mcp.json`. Agents become rules (no native subagents); parallel and blocking
-gates use advisory fallbacks with `AF3xx` warnings.
+**What it builds:** assembles render output into `.cursor/commands/`, `.cursor/agents/*.md`
+(native Cursor subagents), and `.cursor/mcp.json`. Each agent becomes a subagent file with
+`name`/`description`/`model` frontmatter; blocking gates use advisory fallbacks with `AF3xx`
+warnings, and parallel spawn maps to advisory parallel Task wording. (The lean first cut
+shipped `.cursor/rules/*.mdc`; it has since been migrated to native subagents.)
 
 - `internal/binding/cursor/` — **done** in PR #10; not yet exposed via CLI.
 
 **Remaining:** hooks.json, shared negotiation framework, `BUILD-NOTES.md` — see
-[implementation-plans/2026-06-19-m10-cursor-binding.md](implementation-plans/2026-06-19-m10-cursor-binding.md).
+[implementation-plans/2026-06-20-m10-cursor-subagents.md](implementation-plans/2026-06-20-m10-cursor-subagents.md).
 
 ### M8 — CLI & End-to-End · ⏳ Planned
 

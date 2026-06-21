@@ -5,6 +5,7 @@
 - **Design spec:** [plans/post-mvp/10-cursor-and-negotiation.md](../plans/post-mvp/10-cursor-and-negotiation.md)
 - **Language spec:** [§11](../spec/grammar.md#11-host-capability-matrix-v01), [§12](../spec/grammar.md#12-runtime-guarantees-by-target)
 - **Status:** **Partial — lean cut done** ([PR #10](https://github.com/Abhinand20/agentFlow/pull/10))
+- **Superseded by:** [2026-06-20-m10-cursor-subagents.md](2026-06-20-m10-cursor-subagents.md) — the rule-based emission described here was migrated to native `.cursor/agents/*.md` subagents.
 - **Depends on:** M5 (IR), M6 (render). Implements `binding.Binding` (M0).
 - **Blocks:** M8 (`af build --target cursor`); full M10 negotiation framework
 
