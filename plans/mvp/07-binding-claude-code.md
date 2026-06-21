@@ -2,7 +2,7 @@
 
 - Milestone: M7
 - Version: v0.1 (MVP) — Language Level A
-- Status: Planned
+- Status: Planned (Cursor binding landed first — see [M10](../post-mvp/10-cursor-and-negotiation.md) [PR #10](https://github.com/Abhinand20/agentFlow/pull/10))
 - Spec: [§11 Host capability matrix](../../spec/grammar.md#11-host-capability-matrix-v01), [§12 Runtime guarantees — native + hook-enforced](../../spec/grammar.md#12-runtime-guarantees-by-target)
 
 ## Goal
@@ -20,7 +20,11 @@ gates where supported.
 - DOT emitter.
 
 ### Out of scope (deferred)
-- Cursor (M10), SDK runtime (M15).
+- SDK runtime (M15).
+
+> **Note:** Cursor (M10) lean binding shipped in PR #10 before M7. Claude binding
+> should reuse the cursor-local negotiation patterns or the shared framework once
+> extracted (`internal/binding/capability.go`).
 
 ## Packages & files
 
