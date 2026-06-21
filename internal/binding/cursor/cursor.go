@@ -34,14 +34,22 @@ func (c cursorBinding) Emit(p ir.Program) (*emit.FS, diag.Diagnostics) {
 	diags.Add(Negotiate(p, caps)...)
 
 	for _, agent := range sortedAgents(p.Agents) {
-		doc := render.AgentDocument(p, agent, v)
+		doc := render.AgentDocument(agent, v)
 		path := fmt.Sprintf(".cursor/agents/%s.md", agent.Name)
 		content, agentDiags := formatAgentMD(agent, doc)
 		diags.Add(agentDiags...)
 		fs.Write(path, []byte(content))
 	}
 
-	cmdDoc := render.RunbookDocument(p, v)
+	cmdDoc, err := render.RunbookDocument(p, v)
+	if err != nil {
+		diags.Add(diag.Diagnostic{
+			Code:     "AF309",
+			Severity: diag.Error,
+			Msg:      fmt.Sprintf("failed to render runbook: %v", err),
+		})
+		return fs, diags
+	}
 	cmdName := commandBasename(p.Entry.Trigger)
 	fs.Write(fmt.Sprintf(".cursor/commands/%s.md", cmdName), []byte(formatCommandMD(p, cmdDoc)))
 
