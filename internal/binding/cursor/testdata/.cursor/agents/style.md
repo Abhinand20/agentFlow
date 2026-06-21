@@ -1,8 +1,7 @@
 ---
+name: style
 description: "AgentFlow agent \"style\" instructions"
-alwaysApply: false
+model: inherit
 ---
-
-<!-- agentflow: model=haiku -->
 
 Report style findings.

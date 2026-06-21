@@ -15,15 +15,14 @@ func Vocabulary() render.Vocabulary {
 }
 
 func (cursorVocabulary) InvokeAgent(a render.AgentView) string {
-	ruleRef := a.Decl
 	var s string
 	if a.ControlLabel != "" && a.ControlLabel != a.Decl {
 		s = fmt.Sprintf(
-			"Act as the `%s` agent (step `%s`) using the instructions in the `%s` rule",
-			a.Decl, a.ControlLabel, ruleRef,
+			"Use the `%s` subagent (`/%s`) (step `%s`)",
+			a.Decl, a.Decl, a.ControlLabel,
 		)
 	} else {
-		s = fmt.Sprintf("Act as the `%s` agent using the instructions in the `%s` rule", a.Decl, ruleRef)
+		s = fmt.Sprintf("Use the `%s` subagent (`/%s`)", a.Decl, a.Decl)
 	}
 	if a.UsesFlowArg {
 		s += fmt.Sprintf(" with %s", flowInputArg())
@@ -44,7 +43,7 @@ func (cursorVocabulary) SpawnParallel(branches []render.StepView) string {
 		names[i] = b.Decl
 	}
 	return fmt.Sprintf(
-		"Run the following agents one after another (parallel execution is not available on Cursor): %s.",
+		"Launch the following subagents in parallel using multiple Task calls in one message: %s.",
 		strings.Join(names, ", "),
 	)
 }

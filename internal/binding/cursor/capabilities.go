@@ -23,7 +23,7 @@ const (
 )
 
 // StaticCaveat documents a binding-level limitation not tied to a specific program.
-const StaticCaveat = "Cursor agents are emitted as .cursor/rules, not native subagents (see CapNamedSubagents)"
+const StaticCaveat = "Cursor agents are emitted as native .cursor/agents subagent files"
 
 type needs struct {
 	parallel    bool
@@ -41,14 +41,6 @@ type negotiationRule struct {
 
 func negotiationRules() []negotiationRule {
 	return []negotiationRule{
-		{
-			cap:  CapParallelSpawn,
-			need: func(n needs) bool { return n.parallel },
-			code: "AF300",
-			message: func(needs) string {
-				return "parallel spawn is sequential on cursor"
-			},
-		},
 		{
 			cap:  CapLoopEnforce,
 			need: func(n needs) bool { return n.loopBound },
@@ -71,10 +63,10 @@ func negotiationRules() []negotiationRule {
 func (c cursorBinding) Capabilities() map[binding.Capability]bool {
 	return map[binding.Capability]bool{
 		CapCommandTrigger: true,
-		CapNamedSubagents: false,
+		CapNamedSubagents: true,
 		CapMCP:            true,
 		CapHooks:          false,
-		CapParallelSpawn:  false,
+		CapParallelSpawn:  true,
 		CapBlockingGate:   false,
 		CapOutputParse:    false,
 		CapLoopEnforce:    false,
@@ -142,6 +134,9 @@ func negotiateNeeds(n needs, caps map[binding.Capability]bool) diag.Diagnostics 
 		}
 		out.Add(warn(rule.code, rule.message(n)))
 	}
+	if n.parallel {
+		out.Add(warn("AF300", "parallel spawn is advisory on cursor; subagents may run sequentially"))
+	}
 	if !caps[CapBlockingGate] {
 		for _, name := range n.blocking {
 			out.Add(warn("AF303", fmt.Sprintf("gate %q falls back to advisory; cursor hooks deferred", name)))
@@ -150,16 +145,13 @@ func negotiateNeeds(n needs, caps map[binding.Capability]bool) diag.Diagnostics 
 	return out
 }
 
-func agentMappingDiags(agent ir.Agent) diag.Diagnostics {
+func agentMappingDiags(agent ir.Agent, readonly bool) diag.Diagnostics {
 	var out diag.Diagnostics
-	if agent.Alias != "" {
-		out.Add(warn("AF305", fmt.Sprintf("agent %q model alias %q cannot be enforced in Cursor rules; recorded in rule metadata", agent.Name, agent.Alias)))
-	}
 	if len(agent.Tools) > 0 {
-		out.Add(warn("AF306", fmt.Sprintf("agent %q tool refs are metadata-only on Cursor; use .cursor/mcp.json for MCP servers", agent.Name)))
+		out.Add(warn("AF306", fmt.Sprintf("agent %q tool refs are metadata-only on Cursor subagents; configure MCP servers via .cursor/mcp.json", agent.Name)))
 	}
-	if agent.Permissions != "" {
-		out.Add(warn("AF307", fmt.Sprintf("agent %q permissions %q cannot map to Cursor rules", agent.Name, agent.Permissions)))
+	if agent.Permissions != "" && !readonly {
+		out.Add(warn("AF307", fmt.Sprintf("agent %q permissions %q only partially map to Cursor (readonly); finer-grained permissions are advisory", agent.Name, agent.Permissions)))
 	}
 	return out
 }

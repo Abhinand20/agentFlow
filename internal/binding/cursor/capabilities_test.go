@@ -37,7 +37,9 @@ func TestCapabilities(t *testing.T) {
 
 	wantTrue := []string{
 		"command-trigger",
+		"named-subagents",
 		"mcp",
+		"parallel-spawn",
 	}
 	for _, name := range wantTrue {
 		if !caps[cursor.Capability(name)] {
@@ -46,9 +48,7 @@ func TestCapabilities(t *testing.T) {
 	}
 
 	wantFalse := []string{
-		"named-subagents",
 		"hooks",
-		"parallel-spawn",
 		"blocking-gate",
 		"output-parse",
 		"loop-enforcement",
@@ -140,16 +140,17 @@ func TestNegotiateDerivedFromCapabilities(t *testing.T) {
 		},
 	}
 	allCaps := cursor.Binding().Capabilities()
-	if len(cursor.Negotiate(p, allCaps)) == 0 {
-		t.Fatal("expected AF300 when parallel-spawn unsupported")
+	got := codes(cursor.Negotiate(p, allCaps))
+	if got["AF300"] == 0 {
+		t.Fatal("expected AF300 advisory even when parallel-spawn capability is true")
 	}
 
 	supported := map[cursor.Capability]bool{}
 	for k, v := range allCaps {
 		supported[k] = v
 	}
-	supported[cursor.CapParallelSpawn] = true
-	if len(cursor.Negotiate(p, supported)) != 0 {
-		t.Fatal("expected no AF300 when parallel-spawn capability enabled")
+	supported[cursor.CapParallelSpawn] = false
+	if codes(cursor.Negotiate(p, supported))["AF300"] == 0 {
+		t.Fatal("expected AF300 when parallel is used")
 	}
 }

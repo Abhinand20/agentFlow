@@ -1,8 +1,7 @@
 ---
+name: build
 description: "AgentFlow agent \"build\" instructions"
-alwaysApply: false
+model: inherit
 ---
-
-<!-- agentflow: model=sonnet tools=github:get_pr -->
 
 Implement the change.

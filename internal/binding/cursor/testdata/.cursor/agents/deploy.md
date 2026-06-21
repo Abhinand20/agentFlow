@@ -1,11 +1,10 @@
 ---
-description: "AgentFlow agent \"notify_author\" instructions"
-alwaysApply: false
+name: deploy
+description: "AgentFlow agent \"deploy\" instructions"
+model: inherit
 ---
 
-<!-- agentflow: model=haiku -->
-
-Tell the author the change was rejected.
+Open the PR and report shipped.
 
 When you have finished, end your reply with exactly one fenced block in this form
 (no other text after the closing fence):

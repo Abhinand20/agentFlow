@@ -35,8 +35,8 @@ func (c cursorBinding) Emit(p ir.Program) (*emit.FS, diag.Diagnostics) {
 
 	for _, agent := range sortedAgents(p.Agents) {
 		doc := render.AgentDocument(p, agent, v)
-		path := fmt.Sprintf(".cursor/rules/%s.mdc", agent.Name)
-		content, agentDiags := formatRuleMDC(agent, doc)
+		path := fmt.Sprintf(".cursor/agents/%s.md", agent.Name)
+		content, agentDiags := formatAgentMD(agent, doc)
 		diags.Add(agentDiags...)
 		fs.Write(path, []byte(content))
 	}
@@ -71,39 +71,36 @@ func commandBasename(trigger string) string {
 	return trigger
 }
 
-func formatRuleMDC(agent ir.Agent, doc render.Document) (string, diag.Diagnostics) {
+func formatAgentMD(agent ir.Agent, doc render.Document) (string, diag.Diagnostics) {
 	desc := agent.Description
-	tools := make([]string, 0)
-	modelAlias := ""
 	for _, f := range doc.Frontmatter {
-		switch f.Key {
-		case "description":
-			if f.Value != "" {
-				desc = f.Value
-			}
-		case "model-alias":
-			modelAlias = f.Value
-		case "tool":
-			tools = append(tools, f.Value)
+		if f.Key == "description" && f.Value != "" {
+			desc = f.Value
 		}
 	}
 	if desc == "" {
 		desc = fmt.Sprintf("AgentFlow agent %q instructions", agent.Name)
 	}
 
+	modelID, _ := HostModelID(agent.Provider, agent.Alias)
+	readonly := agentPermissionsReadOnly(agent.Permissions)
+
 	var b strings.Builder
 	b.WriteString("---\n")
+	b.WriteString("name: ")
+	b.WriteString(agent.Name)
+	b.WriteString("\n")
 	b.WriteString("description: ")
 	b.WriteString(strconvQuoteYAML(desc))
-	b.WriteString("\nalwaysApply: false\n")
+	b.WriteString("\n")
+	b.WriteString("model: ")
+	b.WriteString(modelID)
+	b.WriteString("\n")
+	if readonly {
+		b.WriteString("readonly: true\n")
+	}
 	b.WriteString("---\n")
 
-	meta := agentflowMetaComment(modelAlias, tools)
-	if meta != "" {
-		b.WriteString("\n")
-		b.WriteString(meta)
-		b.WriteString("\n")
-	}
 	if doc.Body != "" {
 		b.WriteString("\n")
 		b.WriteString(doc.Body)
@@ -112,21 +109,15 @@ func formatRuleMDC(agent ir.Agent, doc render.Document) (string, diag.Diagnostic
 		}
 	}
 
-	return b.String(), agentMappingDiags(agent)
+	return b.String(), agentMappingDiags(agent, readonly)
 }
 
-func agentflowMetaComment(modelAlias string, tools []string) string {
-	var parts []string
-	if modelAlias != "" {
-		parts = append(parts, "model="+modelAlias)
+func agentPermissionsReadOnly(permissions string) bool {
+	if permissions == "" {
+		return false
 	}
-	if len(tools) > 0 {
-		parts = append(parts, "tools="+strings.Join(tools, ","))
-	}
-	if len(parts) == 0 {
-		return ""
-	}
-	return "<!-- agentflow: " + strings.Join(parts, " ") + " -->"
+	lower := strings.ToLower(permissions)
+	return strings.Contains(lower, "read") && !strings.Contains(lower, "write")
 }
 
 func formatCommandMD(p ir.Program, doc render.Document) string {

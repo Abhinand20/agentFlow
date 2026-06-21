@@ -1,11 +1,10 @@
 ---
-description: "AgentFlow agent \"deploy\" instructions"
-alwaysApply: false
+name: notify_author
+description: "AgentFlow agent \"notify_author\" instructions"
+model: inherit
 ---
 
-<!-- agentflow: model=sonnet tools=github:create_pr -->
-
-Open the PR and report shipped.
+Tell the author the change was rejected.
 
 When you have finished, end your reply with exactly one fenced block in this form
 (no other text after the closing fence):

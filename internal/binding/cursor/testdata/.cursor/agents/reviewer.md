@@ -1,9 +1,8 @@
 ---
+name: reviewer
 description: "AgentFlow agent \"reviewer\" instructions"
-alwaysApply: false
+model: inherit
 ---
-
-<!-- agentflow: model=opus -->
 
 Review the implementation, test results, and specialist feedback.
 

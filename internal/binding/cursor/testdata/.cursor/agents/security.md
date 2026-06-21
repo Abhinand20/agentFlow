@@ -1,8 +1,7 @@
 ---
+name: security
 description: "AgentFlow agent \"security\" instructions"
-alwaysApply: false
+model: inherit
 ---
-
-<!-- agentflow: model=haiku -->
 
 Report security findings.

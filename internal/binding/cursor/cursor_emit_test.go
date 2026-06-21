@@ -30,15 +30,15 @@ func TestEmitReviewPaths(t *testing.T) {
 	}
 
 	wantPaths := []string{
+		".cursor/agents/build.md",
+		".cursor/agents/deploy.md",
+		".cursor/agents/lint.md",
+		".cursor/agents/notify_author.md",
+		".cursor/agents/reviewer.md",
+		".cursor/agents/security.md",
+		".cursor/agents/style.md",
 		".cursor/commands/ship.md",
 		".cursor/mcp.json",
-		".cursor/rules/build.mdc",
-		".cursor/rules/deploy.mdc",
-		".cursor/rules/lint.mdc",
-		".cursor/rules/notify_author.mdc",
-		".cursor/rules/reviewer.mdc",
-		".cursor/rules/security.mdc",
-		".cursor/rules/style.mdc",
 	}
 	gotPaths := fs.Paths()
 	if len(gotPaths) != len(wantPaths) {
@@ -65,40 +65,49 @@ func TestEmitReviewContents(t *testing.T) {
 		"code_review",
 		"revise",
 		"step `build`",
-		"one after another",
+		"subagent (`/build`)",
+		"Launch the following subagents in parallel",
 	} {
 		if !strings.Contains(shipText, want) {
 			t.Fatalf("ship.md missing %q", want)
 		}
 	}
 
-	build, ok := fs.Get(".cursor/rules/build.mdc")
+	build, ok := fs.Get(".cursor/agents/build.md")
 	if !ok {
-		t.Fatal("missing build.mdc")
+		t.Fatal("missing build.md")
 	}
 	buildText := string(build)
 	for _, want := range []string{
-		"<!-- agentflow: model=sonnet tools=github:get_pr -->",
-		"alwaysApply: false",
+		"name: build",
+		"model: inherit",
+		"Implement the change.",
 	} {
 		if !strings.Contains(buildText, want) {
-			t.Fatalf("build.mdc missing %q", want)
+			t.Fatalf("build.md missing %q", want)
 		}
 	}
+	if strings.Contains(buildText, "alwaysApply") {
+		t.Fatal("build.md should not contain alwaysApply")
+	}
+	if strings.Contains(buildText, "agentflow:") {
+		t.Fatal("build.md should not contain agentflow HTML comment")
+	}
 
-	reviewer, ok := fs.Get(".cursor/rules/reviewer.mdc")
+	reviewer, ok := fs.Get(".cursor/agents/reviewer.md")
 	if !ok {
-		t.Fatal("missing reviewer.mdc")
+		t.Fatal("missing reviewer.md")
 	}
 	reviewerText := string(reviewer)
 	for _, want := range []string{
+		"name: reviewer",
+		"model: inherit",
 		"```agentflow-output",
 		"out: <value>",
 		"approve, revise, reject",
-		"<!-- agentflow: model=opus -->",
 	} {
 		if !strings.Contains(reviewerText, want) {
-			t.Fatalf("reviewer.mdc missing %q", want)
+			t.Fatalf("reviewer.md missing %q", want)
 		}
 	}
 
@@ -123,10 +132,13 @@ func TestEmitReviewNegotiation(t *testing.T) {
 	p := loadReviewIR(t)
 	_, diags := cursor.Binding().Emit(p)
 	got := codes(diags)
-	for _, code := range []string{"AF300", "AF301", "AF302", "AF303", "AF305", "AF306"} {
+	for _, code := range []string{"AF300", "AF301", "AF302", "AF303", "AF306"} {
 		if got[code] == 0 {
 			t.Fatalf("expected %s during Emit", code)
 		}
+	}
+	if got["AF305"] != 0 {
+		t.Fatalf("AF305 should not be emitted for subagent frontmatter models: %v", got)
 	}
 	if got["AF304"] != 0 {
 		t.Fatalf("AF304 is static binding caveat, not per Emit: %v", got)

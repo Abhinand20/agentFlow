@@ -13,8 +13,11 @@ func TestCursorVocabulary(t *testing.T) {
 
 	t.Run("InvokeAgent", func(t *testing.T) {
 		got := v.InvokeAgent(render.AgentView{Decl: "reviewer"})
-		if !strings.Contains(got, "`reviewer`") || !strings.Contains(got, "rule") {
+		if !strings.Contains(got, "`reviewer` subagent (`/reviewer`)") {
 			t.Fatalf("InvokeAgent basic: %q", got)
+		}
+		if strings.Contains(got, "rule") {
+			t.Fatalf("InvokeAgent should not reference rules: %q", got)
 		}
 
 		got = v.InvokeAgent(render.AgentView{
@@ -48,8 +51,11 @@ func TestCursorVocabulary(t *testing.T) {
 			{Decl: "security"},
 		}
 		got := v.SpawnParallel(branches)
-		if !strings.Contains(got, "one after another") {
-			t.Fatalf("SpawnParallel missing sequential fallback: %q", got)
+		if !strings.Contains(got, "Launch the following subagents in parallel") {
+			t.Fatalf("SpawnParallel missing advisory parallel wording: %q", got)
+		}
+		if strings.Contains(got, "one after another") {
+			t.Fatalf("SpawnParallel should not say sequential: %q", got)
 		}
 		if !strings.Contains(got, "lint") || !strings.Contains(got, "security") {
 			t.Fatalf("SpawnParallel missing branch names: %q", got)

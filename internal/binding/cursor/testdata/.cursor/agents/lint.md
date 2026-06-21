@@ -1,8 +1,7 @@
 ---
+name: lint
 description: "AgentFlow agent \"lint\" instructions"
-alwaysApply: false
+model: inherit
 ---
-
-<!-- agentflow: model=haiku -->
 
 Report lint findings.
