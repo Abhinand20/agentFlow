@@ -3,7 +3,10 @@ package cursor
 // cursorModelIDs maps "provider.alias" to a Cursor-native model id.
 // Cursor subagents default to inheriting the parent model (model: inherit);
 // entries here override only when an explicit Cursor model id is known.
-var cursorModelIDs = map[string]string{}
+var cursorModelIDs = map[string]string{
+	"cursor.opus-4-8":          "claude-opus-4-8-thinking-high",
+	"cursor.composer-2-5-fast": "composer-2.5-fast",
+}
 
 // HostModelID resolves a provider/alias pair to a Cursor model id.
 // When no mapping exists, returns ("inherit", false).
