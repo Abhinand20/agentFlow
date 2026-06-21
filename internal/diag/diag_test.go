@@ -87,3 +87,21 @@ func TestRenderEmpty(t *testing.T) {
 		t.Fatalf("expected empty string, got %q", got)
 	}
 }
+
+func TestHasSourceLocation(t *testing.T) {
+	t.Parallel()
+
+	withLine := diag.Diagnostic{
+		Pos: lexer.Position{Filename: "f.af", Line: 1, Column: 1},
+	}
+	if !withLine.HasSourceLocation() {
+		t.Fatal("expected HasSourceLocation true when Line > 0")
+	}
+
+	fileOnly := diag.Diagnostic{
+		Pos: lexer.Position{Filename: "missing.af", Line: 0},
+	}
+	if fileOnly.HasSourceLocation() {
+		t.Fatal("expected HasSourceLocation false when Line is 0")
+	}
+}

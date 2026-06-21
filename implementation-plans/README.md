@@ -21,8 +21,8 @@ Execution plans for building AgentFlow. Milestone **design specs** live in
 | 2026-06-19 | [2026-06-19-m6-render.md](2026-06-19-m6-render.md) | M6 | Done |
 | 2026-06-19 | [2026-06-19-m7-claude-binding.md](2026-06-19-m7-claude-binding.md) | M7 | Planned |
 | 2026-06-19 | [2026-06-19-m10-cursor-binding.md](2026-06-19-m10-cursor-binding.md) | M10 (lean) | Partial |
-| 2026-06-19 | [2026-06-19-m8-cli-e2e.md](2026-06-19-m8-cli-e2e.md) | M8 | Planned |
-| 2026-06-20 | [2026-06-20-m10-cursor-subagents.md](2026-06-20-m10-cursor-subagents.md) | M10 | Planned |
+| 2026-06-19 | [2026-06-19-m8-cli-e2e.md](2026-06-19-m8-cli-e2e.md) | M8 | Done (cursor path) |
+| 2026-06-20 | [2026-06-20-m10-cursor-subagents.md](2026-06-20-m10-cursor-subagents.md) | M10 | Done |
 
 ## How these relate
 

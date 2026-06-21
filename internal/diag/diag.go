@@ -34,6 +34,12 @@ type Diagnostic struct {
 	Pos      lexer.Position
 }
 
+// HasSourceLocation reports whether Pos carries a renderable source line.
+// Filename alone (e.g. AF000 read errors) is not enough for caret rendering.
+func (d Diagnostic) HasSourceLocation() bool {
+	return d.Pos.Line > 0
+}
+
 // Diagnostics is an ordered collection of diagnostics.
 type Diagnostics []Diagnostic
 

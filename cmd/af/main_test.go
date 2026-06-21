@@ -2,79 +2,85 @@ package main
 
 import (
 	"bytes"
-	"os"
-	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
-func TestMainUsage(t *testing.T) {
+const reviewAf = "../../examples/review.af"
+
+// runInProc invokes the dispatcher in-process and returns stdout, stderr, and
+// the exit code so tests can assert the exit policy precisely.
+func runInProc(args ...string) (stdout, stderr string, code int) {
+	var out, err bytes.Buffer
+	code = run(args, &out, &err)
+	return out.String(), err.String(), code
+}
+
+func TestUsageNoArgs(t *testing.T) {
 	t.Parallel()
-	out := runAF(t)
-	if !bytes.Contains(out, []byte("AgentFlow compiler")) {
+	out, _, code := runInProc()
+	if code != 0 {
+		t.Fatalf("no-args exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "AgentFlow compiler") {
 		t.Fatalf("usage missing banner: %s", out)
 	}
-	if !bytes.Contains(out, []byte("validate")) {
-		t.Fatalf("usage missing validate: %s", out)
+	for _, cmd := range []string{"validate", "build", "graph"} {
+		if !strings.Contains(out, cmd) {
+			t.Fatalf("usage missing %q command: %s", cmd, out)
+		}
 	}
 }
 
-func TestValidateNotImplemented(t *testing.T) {
+func TestHelpFlag(t *testing.T) {
 	t.Parallel()
-	out := runAF(t, "validate")
-	if !bytes.Contains(out, []byte("validate: not implemented")) {
-		t.Fatalf("unexpected output: %s", out)
+	out, _, code := runInProc("--help")
+	if code != 0 {
+		t.Fatalf("--help exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "AgentFlow compiler") {
+		t.Fatalf("--help missing banner: %s", out)
 	}
 }
 
-func TestBuildNotImplemented(t *testing.T) {
+func TestUnknownCommandExit2(t *testing.T) {
 	t.Parallel()
-	out := runAF(t, "build")
-	if !bytes.Contains(out, []byte("build: not implemented")) {
-		t.Fatalf("unexpected output: %s", out)
+	_, errOut, code := runInProc("nope")
+	if code != 2 {
+		t.Fatalf("unknown command exit = %d, want 2", code)
+	}
+	if !strings.Contains(errOut, "unknown command") {
+		t.Fatalf("stderr = %q", errOut)
 	}
 }
 
-func TestGraphNotImplemented(t *testing.T) {
+func TestValidateReviewAf(t *testing.T) {
 	t.Parallel()
-	out := runAF(t, "graph")
-	if !bytes.Contains(out, []byte("graph: not implemented")) {
-		t.Fatalf("unexpected output: %s", out)
+	out, _, code := runInProc("validate", reviewAf)
+	if code != 0 {
+		t.Fatalf("validate exit = %d, want 0", code)
+	}
+	if !strings.Contains(out, "ok") {
+		t.Fatalf("validate should print ok:\n%s", out)
 	}
 }
 
-func TestUnknownCommand(t *testing.T) {
+func TestValidateMissingFileExit1(t *testing.T) {
 	t.Parallel()
-	cmd := exec.Command("go", "run", ".", "nope")
-	cmd.Dir = afDir(t)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err == nil {
-		t.Fatal("expected non-zero exit for unknown command")
+	_, errOut, code := runInProc("validate", filepath.Join("..", "..", "examples", "does-not-exist.af"))
+	if code != 1 {
+		t.Fatalf("validate missing file exit = %d, want 1", code)
 	}
-	if !bytes.Contains(stderr.Bytes(), []byte("unknown command")) {
-		t.Fatalf("stderr = %q", stderr.String())
+	if !strings.Contains(errOut, "AF000") {
+		t.Fatalf("expected AF000 read error on stderr:\n%s", errOut)
 	}
 }
 
-func runAF(t *testing.T, args ...string) []byte {
-	t.Helper()
-	cmd := exec.Command("go", append([]string{"run", "."}, args...)...)
-	cmd.Dir = afDir(t)
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stdout
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("go run: %v\noutput: %s", err, stdout.Bytes())
+func TestValidateUsageExit2(t *testing.T) {
+	t.Parallel()
+	_, _, code := runInProc("validate")
+	if code != 2 {
+		t.Fatalf("validate without file exit = %d, want 2", code)
 	}
-	return stdout.Bytes()
-}
-
-func afDir(t *testing.T) string {
-	t.Helper()
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return filepath.Join(wd, "..", "..", "cmd", "af")
 }
