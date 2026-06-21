@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,6 +41,17 @@ func TestGraphUsageExit2(t *testing.T) {
 	}
 }
 
+func TestGraphUnknownTargetExit2(t *testing.T) {
+	t.Parallel()
+	_, errOut, code := runInProc("graph", reviewAf, "--target", "nope")
+	if code != 2 {
+		t.Fatalf("graph unknown target exit = %d, want 2", code)
+	}
+	if !strings.Contains(errOut, "cursor") {
+		t.Fatalf("graph unknown-target error should list available targets:\n%s", errOut)
+	}
+}
+
 func TestBuildCursorTarget(t *testing.T) {
 	t.Parallel()
 	outDir := t.TempDir()
@@ -64,8 +76,26 @@ func TestBuildEmitIR(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("build --emit-ir exit = %d, want 0", code)
 	}
-	if !strings.Contains(out, `"flowName"`) && !strings.Contains(out, `"FlowName"`) {
-		t.Fatalf("emit-ir should print IR JSON:\n%s", out)
+	trimmed := strings.TrimSpace(out)
+	if !json.Valid([]byte(trimmed)) {
+		t.Fatalf("emit-ir should print valid JSON:\n%s", out)
+	}
+	if !strings.Contains(trimmed, `"FlowName": "ship"`) {
+		t.Fatalf("emit-ir JSON should include entry FlowName:\n%s", out)
+	}
+	if !strings.Contains(trimmed, `"Trigger": "/ship"`) {
+		t.Fatalf("emit-ir JSON should include entry Trigger:\n%s", out)
+	}
+}
+
+func TestBuildEmitIRIgnoresTarget(t *testing.T) {
+	t.Parallel()
+	_, stderr, code := runInProc("build", reviewAf, "--emit-ir", "--target", "cursor")
+	if code != 0 {
+		t.Fatalf("build --emit-ir with --target exit = %d, want 0", code)
+	}
+	if !strings.Contains(stderr, "--emit-ir ignores --target") {
+		t.Fatalf("expected --emit-ir ignores --target warning:\n%s", stderr)
 	}
 }
 

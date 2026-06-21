@@ -62,9 +62,11 @@ func Compile(path string) (Result, diag.Diagnostics) {
 
 	res, d := flowgraph.Resolve(prog)
 	diags.Add(d...)
-
-	// Always run validate (even when flowgraph cut recursion) to surface as
-	// many issues as possible, but do not build IR if anything errored.
+	// Intentionally do not short-circuit on flowgraph errors before validate:
+	// surface as many diagnostics as possible in one compile pass. M4 rules
+	// operate on the semantic model (ctx.Prog); none read ctx.Res today, so a
+	// nil *Resolved from an early flowgraph exit is safe when only warnings
+	// were emitted.
 	diags.Add(validate.Validate(prog, res)...)
 	if diags.HasErrors() {
 		return result, diags

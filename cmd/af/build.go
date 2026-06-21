@@ -16,7 +16,7 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	target := fs.String("target", "", "host target ("+availableTargets()+")")
 	out := fs.String("out", ".", "output directory")
-	emitIR := fs.Bool("emit-ir", false, "print IR JSON to stdout instead of writing host files")
+	emitIR := fs.Bool("emit-ir", false, "print IR JSON to stdout instead of writing host files (ignores --target)")
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "usage: af build <file> --target <host> [--out dir] [--emit-ir]")
 		fs.PrintDefaults()
@@ -36,13 +36,18 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if *emitIR {
+		if *target != "" {
+			fmt.Fprintf(stderr, "build: --emit-ir ignores --target (%s)\n", availableTargets())
+		}
 		data, err := ir.Marshal(res.IR)
 		if err != nil {
 			fmt.Fprintf(stderr, "build: encode IR: %v\n", err)
 			return 1
 		}
-		stdout.Write(data)
-		fmt.Fprintln(stdout)
+		if _, err := fmt.Fprintln(stdout, string(data)); err != nil {
+			fmt.Fprintf(stderr, "build: write IR: %v\n", err)
+			return 1
+		}
 		return 0
 	}
 

@@ -126,7 +126,9 @@ func (b *builder) walk(n ir.Node) (entries, exits []string) {
 		return en, ex
 
 	case ir.NodeBranch:
-		decID := "branch:" + n.BranchValue
+		// Internal node IDs are DOT-quoted at emit time; BranchValue labels are
+		// spec identifiers and safe as opaque ID suffixes.
+		decID := branchNodeID(n.BranchValue)
 		b.addNode(decID, n.BranchValue+" ?", "diamond")
 		var exits []string
 		for _, c := range n.Cases {
@@ -135,8 +137,16 @@ func (b *builder) walk(n ir.Node) (entries, exits []string) {
 			exits = append(exits, ex...)
 		}
 		return []string{decID}, exits
+
+	default:
+		id := fmt.Sprintf("unknown:%s", n.Kind)
+		b.addNode(id, string(n.Kind)+" (unsupported)", "octagon")
+		return []string{id}, []string{id}
 	}
-	return nil, nil
+}
+
+func branchNodeID(valueLabel string) string {
+	return "branch:" + valueLabel
 }
 
 func loopLabel(n ir.Node) string {

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Abhinand20/agentFlow/internal/dot"
+	"github.com/Abhinand20/agentFlow/internal/ir"
 	"github.com/Abhinand20/agentFlow/internal/pipeline"
 )
 
@@ -85,5 +86,15 @@ func TestEmitDeterministic(t *testing.T) {
 	ir := compileReview(t).IR
 	if dot.Emit(ir) != dot.Emit(ir) {
 		t.Fatal("Emit must be deterministic")
+	}
+}
+
+func TestEmitUnknownNodeKind(t *testing.T) {
+	t.Parallel()
+	p := compileReview(t).IR
+	p.Flow.Root = ir.Node{Kind: ir.NodeKind("future")}
+	out := dot.Emit(p)
+	if !strings.Contains(out, `"unknown:future"`) {
+		t.Fatalf("DOT should surface unsupported node kinds:\n%s", out)
 	}
 }

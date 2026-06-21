@@ -68,7 +68,7 @@ func parseArgs(fs *flag.FlagSet, args []string) ([]string, error) {
 func emitDiags(stderr io.Writer, source string, diags diag.Diagnostics) {
 	var positioned diag.Diagnostics
 	for _, d := range diags {
-		if d.Pos.Filename == "" && d.Pos.Line == 0 {
+		if !d.HasSourceLocation() {
 			fmt.Fprintf(stderr, "%s %s: %s\n", d.Severity, d.Code, d.Msg)
 			continue
 		}

@@ -4,18 +4,22 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/Abhinand20/agentFlow/internal/binding"
 	"github.com/Abhinand20/agentFlow/internal/dot"
 )
 
 func cmdGraph(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("graph", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	// DOT is target-neutral; the flag is accepted for forward compatibility
-	// and symmetry with `af build`.
-	_ = fs.String("target", "", "host target (accepted for forward compatibility; DOT is target-neutral)")
+	targetNames := strings.Join(binding.Names(), "|")
+	if targetNames == "" {
+		targetNames = "<host>"
+	}
+	target := fs.String("target", "", "host target (optional; "+availableTargets()+")")
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "usage: af graph <file> [--target claude-code|cursor]")
+		fmt.Fprintf(stderr, "usage: af graph <file> [--target %s]\n", targetNames)
 		fs.PrintDefaults()
 	}
 	operands, err := parseArgs(fs, args)
@@ -25,6 +29,12 @@ func cmdGraph(args []string, stdout, stderr io.Writer) int {
 	if len(operands) != 1 {
 		fs.Usage()
 		return 2
+	}
+	if *target != "" {
+		if _, ok := binding.Get(*target); !ok {
+			fmt.Fprintf(stderr, "graph: unknown target %q (%s)\n", *target, availableTargets())
+			return 2
+		}
 	}
 
 	res, hasErrors := compileOrReport(operands[0], stderr)
