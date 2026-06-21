@@ -186,10 +186,10 @@ Parse failure → retry up to `retry:` → halt. Details: [spec §9](spec/gramma
 | Capability | Claude Code (MVP) | Cursor (M10) | SDK (M15) |
 |------------|-------------------|--------------|-----------|
 | Slash command | yes | yes | CLI |
-| Named subagents | yes | partial | yes |
+| Named subagents | yes | yes | yes |
 | MCP emission | yes | yes | yes |
 | Blocking gates | hooks | advisory | hard |
-| Parallel spawn | advisory | fallback | hard |
+| Parallel spawn | advisory | advisory | hard |
 | Deterministic control flow | no | no | yes |
 
 Full matrix: [spec §11](spec/grammar.md#11-host-capability-matrix-v01).

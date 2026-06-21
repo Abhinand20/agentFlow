@@ -593,10 +593,10 @@ this matrix and emits `AF3xx` warnings.
 | Capability | claude-code (MVP target) | cursor (M10) | sdk (M15) |
 |------------|--------------------------|--------------|-------------|
 | Command trigger (`on:`) | yes — `.claude/commands/` | yes — `.cursor/commands/` | yes — CLI entry |
-| Named subagent files | yes — `.claude/agents/` | partial — rules + prompt library | yes — SDK agents |
+| Named subagent files | yes — `.claude/agents/` | yes — `.cursor/agents/` | yes — SDK agents |
 | MCP config emission | yes — `.mcp.json` | yes — `.cursor/mcp.json` | yes |
 | Lifecycle hooks | yes — settings hooks | beta — `.cursor/hooks.json` | N/A (in-process) |
-| Parallel subagent spawn | yes — Task (advisory) | partial — sequential fallback | yes — async |
+| Parallel subagent spawn | yes — Task (advisory) | advisory — Task (multiple calls in one message) | yes — async |
 | Blocking gates | yes — hook exit 2 | advisory fallback | yes — exit code |
 | Output protocol parse | advisory — runbook instructs | advisory | deterministic |
 | File layout stability | `.claude/**` | `.cursor/**` | generated project |
