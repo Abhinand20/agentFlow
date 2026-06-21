@@ -1,0 +1,25 @@
+# Architecture: CL review pipeline (Reviewer -> Executor)
+# Demonstrates: sequential pipeline, caveman-review skill via prompt, model binding.
+# Input: GitHub PR URL or commit SHA (ChangeRef).
+
+use cursor {
+  kind: model-provider
+  models: [opus-4-8, composer-2-5-fast]
+}
+
+agent reviewer {
+  model: opus-4-8
+  in: ChangeRef
+  prompt-file: "prompts/cl-reviewer.md"
+}
+
+agent executor {
+  model: composer-2-5-fast
+  prompt-file: "prompts/cl-executor.md"
+}
+
+entry flow cl_review {
+  on: "/cl-review"
+  in: ChangeRef
+  reviewer -> executor
+}

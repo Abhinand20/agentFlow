@@ -9,6 +9,7 @@ reference this file. Regold tests when it changes.
 
 **Supplementary architecture fixtures (Level A):**
 [../examples/pipeline.af](../examples/pipeline.af) (sequential),
+[../examples/cl-review.af](../examples/cl-review.af) (CL review: reviewer → executor),
 [../examples/research.af](../examples/research.af) (supervisor/worker fan-out),
 [../examples/critic.af](../examples/critic.af) (generator/critic), and
 [../examples/docs.af](../examples/docs.af) (prompts from markdown files). These
@@ -128,6 +129,7 @@ internal/plan/                 # M14
 internal/sim/                  # M14
 examples/review.af             # §14 golden program (regold anchor)
 examples/pipeline.af           # sequential pipeline (Level A)
+examples/cl-review.af          # CL review pipeline: reviewer -> executor (Level A)
 examples/research.af           # supervisor/worker fan-out (Level A)
 examples/critic.af             # generator/critic via repeat (Level A)
 examples/docs.af               # prompts from markdown files (Level A)
