@@ -9,7 +9,6 @@ use cursor {
 
 agent reviewer {
   model: opus-4-8
-  in: ChangeRef
   prompt-file: "prompts/cl-reviewer.md"
 }
 

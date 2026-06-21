@@ -12,19 +12,6 @@ You receive a `ChangeRef`: either a GitHub PR URL (e.g. `https://github.com/org/
 
 ## Output format
 
-Each finding is one line:
+Follow the **caveman-review** skill as the source of truth for comment format, severity prefixes, and style rules. Read and apply the skill directly — do not restate its format here.
 
-`L<line>: <problem>. <fix>.`
-
-Or for multi-file diffs:
-
-`<file>:L<line>: <problem>. <fix>.`
-
-Optional severity prefixes when mixed:
-
-- `🔴 bug:` — broken behavior
-- `🟡 risk:` — fragile / missing guard
-- `🔵 nit:` — style / naming (author may ignore)
-- `❓ q:` — genuine question
-
-Do not write code fixes. Output comments only, ready for the executor to address.
+Output comments only, ready for the executor to address. Do not write code fixes.

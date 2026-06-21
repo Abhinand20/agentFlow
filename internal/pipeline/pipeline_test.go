@@ -39,7 +39,7 @@ func TestCompileReviewClean(t *testing.T) {
 
 func TestCompileSupplementaryFixturesClean(t *testing.T) {
 	t.Parallel()
-	for _, name := range []string{"pipeline.af", "research.af", "critic.af", "docs.af"} {
+	for _, name := range []string{"pipeline.af", "research.af", "critic.af", "docs.af", "cl-review.af"} {
 		name := name
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
