@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -65,6 +67,17 @@ func TestBuildCursorTarget(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(outDir, ".cursor", "mcp.json")); err != nil {
 		t.Fatalf("build did not write .cursor/mcp.json: %v", err)
 	}
+	manifestPaths, err := filepath.Glob(filepath.Join(outDir, ".cursor", ".agentflow", "manifests", "*.json"))
+	if err != nil || len(manifestPaths) != 1 {
+		t.Fatalf("expected one manifest file, got %v err=%v", manifestPaths, err)
+	}
+	data, err := os.ReadFile(manifestPaths[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !json.Valid(data) {
+		t.Fatalf("manifest should be valid JSON:\n%s", data)
+	}
 	if !strings.Contains(stderr, "AF3") {
 		t.Fatalf("expected AF3xx warnings from cursor binding on stderr:\n%s", stderr)
 	}
@@ -119,4 +132,201 @@ func TestBuildUnknownTargetExit2(t *testing.T) {
 	if !strings.Contains(errOut, "cursor") {
 		t.Fatalf("unknown-target error should list available targets:\n%s", errOut)
 	}
+}
+
+func TestCleanRequiresSourceOrAll(t *testing.T) {
+	t.Parallel()
+	_, errOut, code := runInProc("clean", "--target", "cursor")
+	if code != 2 {
+		t.Fatalf("clean without source exit = %d, want 2", code)
+	}
+	if !strings.Contains(errOut, "specify an .af source or --all") {
+		t.Fatalf("expected usage error:\n%s", errOut)
+	}
+}
+
+func TestCleanSourceScopedIsolation(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build review exit = %d\n%s", code, stderr)
+	}
+	if _, stderr, code := runInProc("build", pipelineAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build pipeline exit = %d\n%s", code, stderr)
+	}
+
+	if _, err := os.Stat(filepath.Join(outDir, ".cursor", "commands", "write.md")); err != nil {
+		t.Fatalf("pipeline command missing: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, ".cursor", "commands", "ship.md")); err != nil {
+		t.Fatalf("review command missing: %v", err)
+	}
+
+	if _, stderr, code := runInProc("clean", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("clean review exit = %d\n%s", code, stderr)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, ".cursor", "commands", "ship.md")); !os.IsNotExist(err) {
+		t.Fatalf("review command should be removed")
+	}
+	if _, err := os.Stat(filepath.Join(outDir, ".cursor", "commands", "write.md")); err != nil {
+		t.Fatalf("pipeline command should remain: %v", err)
+	}
+}
+
+func TestCleanAll(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build review exit = %d\n%s", code, stderr)
+	}
+	if _, stderr, code := runInProc("build", pipelineAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build pipeline exit = %d\n%s", code, stderr)
+	}
+	if _, stderr, code := runInProc("clean", "--all", "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("clean --all exit = %d\n%s", code, stderr)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, ".cursor", "commands", "write.md")); !os.IsNotExist(err) {
+		t.Fatalf("pipeline command should be removed")
+	}
+	if _, err := os.Stat(filepath.Join(outDir, ".cursor", "commands", "ship.md")); !os.IsNotExist(err) {
+		t.Fatalf("review command should be removed")
+	}
+}
+
+func TestCleanDriftGuard(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build exit = %d\n%s", code, stderr)
+	}
+	agentPath := filepath.Join(outDir, ".cursor", "agents", "reviewer.md")
+	if err := os.WriteFile(agentPath, []byte("hand-edited"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, code := runInProc("clean", reviewAf, "--target", "cursor", "--out", outDir)
+	if code != 0 {
+		t.Fatalf("clean with drift should still exit 0, got %d\n%s", code, stderr)
+	}
+	if !strings.Contains(stderr, "AF310") {
+		t.Fatalf("expected drift warning:\n%s", stderr)
+	}
+	if _, err := os.Stat(agentPath); err != nil {
+		t.Fatalf("modified artifact should remain: %v", err)
+	}
+}
+
+func TestCleanNoManifestExit1(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	_, stderr, code := runInProc("clean", reviewAf, "--target", "cursor", "--out", outDir)
+	if code != 1 {
+		t.Fatalf("clean without manifest exit = %d, want 1", code)
+	}
+	if !strings.Contains(stderr, "no manifest found") {
+		t.Fatalf("expected no manifest error:\n%s", stderr)
+	}
+}
+
+func TestBuildPruneRemovesOrphan(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("first build exit = %d\n%s", code, stderr)
+	}
+
+	orphanRel := ".cursor/agents/orphan.md"
+	orphanFull := filepath.Join(outDir, filepath.FromSlash(orphanRel))
+	if err := os.WriteFile(orphanFull, []byte("orphan"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifestPaths, err := filepath.Glob(filepath.Join(outDir, ".cursor", ".agentflow", "manifests", "*.json"))
+	if err != nil || len(manifestPaths) != 1 {
+		t.Fatalf("manifest glob: %v paths=%v", err, manifestPaths)
+	}
+	data, err := os.ReadFile(manifestPaths[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(data, &doc); err != nil {
+		t.Fatal(err)
+	}
+	arts, _ := doc["artifacts"].([]any)
+	arts = append(arts, map[string]any{
+		"path":   orphanRel,
+		"role":   "agent",
+		"sha256": manifestHashBytes([]byte("orphan")),
+		"bytes":  6,
+	})
+	doc["artifacts"] = arts
+	updated, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(manifestPaths[0], updated, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir, "--prune"); code != 0 {
+		t.Fatalf("second build --prune exit = %d\n%s", code, stderr)
+	}
+	if _, err := os.Stat(orphanFull); !os.IsNotExist(err) {
+		t.Fatalf("orphan should be pruned")
+	}
+}
+
+func TestVersionsListGrouped(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build review exit = %d\n%s", code, stderr)
+	}
+	if _, stderr, code := runInProc("build", pipelineAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build pipeline exit = %d\n%s", code, stderr)
+	}
+	out, _, code := runInProc("versions", "list", "--target", "cursor", "--out", outDir)
+	if code != 0 {
+		t.Fatalf("versions list exit = %d", code)
+	}
+	if !strings.Contains(out, "review.af") || !strings.Contains(out, "pipeline.af") {
+		t.Fatalf("versions list should include both sources:\n%s", out)
+	}
+}
+
+func TestVersionsStatusClean(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("build exit = %d\n%s", code, stderr)
+	}
+	out, _, code := runInProc("versions", "status", reviewAf, "--target", "cursor", "--out", outDir)
+	if code != 0 {
+		t.Fatalf("versions status exit = %d, want 0\n%s", code, out)
+	}
+	if !strings.Contains(out, "clean") {
+		t.Fatalf("status should report clean artifacts:\n%s", out)
+	}
+}
+
+func TestVersionsDiff(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("first build exit = %d\n%s", code, stderr)
+	}
+	if _, stderr, code := runInProc("build", reviewAf, "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("second build exit = %d\n%s", code, stderr)
+	}
+	out, _, code := runInProc("versions", "diff", reviewAf, "--target", "cursor", "--out", outDir)
+	if code != 0 {
+		t.Fatalf("versions diff exit = %d\n%s", code, out)
+	}
+	if !strings.Contains(out, "diff v1 -> v2") {
+		t.Fatalf("expected default diff between latest builds:\n%s", out)
+	}
+}
+
+func manifestHashBytes(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }

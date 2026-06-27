@@ -4,11 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/Abhinand20/agentFlow/internal/binding"
 	"github.com/Abhinand20/agentFlow/internal/ir"
+	"github.com/Abhinand20/agentFlow/internal/manifest"
 )
 
 func cmdBuild(args []string, stdout, stderr io.Writer) int {
@@ -17,8 +19,11 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 	target := fs.String("target", "", "host target ("+availableTargets()+")")
 	out := fs.String("out", ".", "output directory")
 	emitIR := fs.Bool("emit-ir", false, "print IR JSON to stdout instead of writing host files (ignores --target)")
+	noManifest := fs.Bool("no-manifest", false, "skip writing the build manifest")
+	prune := fs.Bool("prune", false, "remove artifacts dropped since the previous build of this source")
+	force := fs.Bool("force", false, "with --prune, delete modified artifacts")
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "usage: af build <file> --target <host> [--out dir] [--emit-ir]")
+		fmt.Fprintln(stderr, "usage: af build <file> --target <host> [--out dir] [--emit-ir] [--no-manifest] [--prune] [--force]")
 		fs.PrintDefaults()
 	}
 	operands, err := parseArgs(fs, args)
@@ -29,8 +34,9 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 		fs.Usage()
 		return 2
 	}
+	sourcePath := operands[0]
 
-	res, hasErrors := compileOrReport(operands[0], stderr)
+	res, hasErrors := compileOrReport(sourcePath, stderr)
 	if hasErrors {
 		return 1
 	}
@@ -67,6 +73,49 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
+	var prior *manifest.Manifest
+	if !*noManifest {
+		priorLoaded, found, err := manifest.Load(*out, *target, sourcePath)
+		if err != nil {
+			fmt.Fprintf(stderr, "build: load manifest: %v\n", err)
+			return 1
+		}
+		if found {
+			prior = priorLoaded
+		}
+
+		irData, err := ir.Marshal(res.IR)
+		if err != nil {
+			fmt.Fprintf(stderr, "build: encode IR for manifest: %v\n", err)
+			return 1
+		}
+		m := manifest.Build(manifest.BuildOptions{
+			Target:       *target,
+			SourcePath:   sourcePath,
+			SourceSHA256: manifest.HashSource(res.Source),
+			IRHash:       manifest.HashBytes(irData),
+			FS:           hostFS,
+			Prior:        prior,
+			ToolVersion:  toolVersion,
+		})
+
+		all, err := manifest.LoadAll(*out, *target)
+		if err != nil {
+			fmt.Fprintf(stderr, "build: load manifests: %v\n", err)
+			return 1
+		}
+		for path, detail := range manifest.Overlaps(&m, all) {
+			fmt.Fprintf(stderr, "warning AF312: artifact %s overlaps another source (%s)\n", path, detail)
+		}
+
+		data, err := manifest.Marshal(m)
+		if err != nil {
+			fmt.Fprintf(stderr, "build: encode manifest: %v\n", err)
+			return 1
+		}
+		hostFS.Write(manifest.ManifestRelPath(*target, sourcePath), data)
+	}
+
 	if err := hostFS.Flush(*out); err != nil {
 		fmt.Fprintf(stderr, "build: %v\n", err)
 		return 1
@@ -74,7 +123,42 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 	for _, p := range hostFS.Paths() {
 		fmt.Fprintln(stdout, filepath.Join(*out, filepath.FromSlash(p)))
 	}
+
+	if *prune && prior != nil && !*noManifest {
+		current, found, err := manifest.Load(*out, *target, sourcePath)
+		if err != nil || !found {
+			if err != nil {
+				fmt.Fprintf(stderr, "build: reload manifest for prune: %v\n", err)
+			}
+		} else if err := pruneArtifacts(*out, prior, current, *force, stderr); err != nil {
+			fmt.Fprintf(stderr, "build: prune: %v\n", err)
+			return 1
+		}
+	}
+
 	return 0
+}
+
+func pruneArtifacts(out string, prior, current *manifest.Manifest, force bool, stderr io.Writer) error {
+	changes := manifest.Diff(prior.CurrentRecord(), current.CurrentRecord())
+	report := manifest.DriftCheck(prior, out)
+	modified := make(map[string]struct{}, len(report.Modified))
+	for _, art := range report.Modified {
+		modified[art.Path] = struct{}{}
+	}
+
+	for _, rel := range changes.Removed {
+		if _, ok := modified[rel]; ok && !force {
+			fmt.Fprintf(stderr, "warning AF310: skip pruning modified artifact %s (use --force)\n", rel)
+			continue
+		}
+		full := filepath.Join(out, filepath.FromSlash(rel))
+		if err := os.Remove(full); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		fmt.Fprintf(stderr, "build: pruned %s\n", rel)
+	}
+	return nil
 }
 
 func availableTargets() string {

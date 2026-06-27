@@ -85,6 +85,7 @@ M0–M6, M8, and M10 are **Done**; M7 (Claude binding) is the next target.
 | M15 | [15 - SDK Runtime](post-mvp/15-sdk-runtime.md) | v0.5+ | Planned |
 | M16 | [16 - LSP](post-mvp/16-lsp.md) | v0.5+ | Planned |
 | M17 | [17 - Config Import & Round-Trip](post-mvp/17-config-import-and-roundtrip.md) | v0.6+ | Planned |
+| M18 | [18 - Manifest, Clean & Versioning](post-mvp/18-manifest-clean-versioning.md) | v0.2+ | In progress |
 
 ## Compile pipeline
 
@@ -133,6 +134,7 @@ internal/binding/cursor/     # M10 (done)
 internal/binding/capability.go
 internal/dot/                  # DOT emitter for af graph (M8)
 internal/pipeline/             # Compile() shared entry point (M8)
+internal/manifest/             # per-source build manifest (M18)
 internal/plan/                 # M14
 internal/sim/                  # M14
 examples/review.af             # §14 golden program (regold anchor)

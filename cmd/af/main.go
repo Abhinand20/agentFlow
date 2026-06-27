@@ -33,6 +33,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return cmdGraph(args[1:], stdout, stderr)
 	case "build":
 		return cmdBuild(args[1:], stdout, stderr)
+	case "clean":
+		return cmdClean(args[1:], stdout, stderr)
+	case "versions":
+		return cmdVersions(args[1:], stdout, stderr)
 	case "-h", "--help", "help":
 		fmt.Fprint(stdout, usageText())
 		return 0
@@ -96,6 +100,8 @@ Usage:
 Commands:
   validate   Check an .af file for errors
   build      Compile an .af file to host configuration
+  clean      Remove generated artifacts for a source (or --all)
+  versions   Inspect build history and drift for generated artifacts
   graph      Print the resolved flow graph as DOT
 
 Run "af <command> -h" for command-specific flags.

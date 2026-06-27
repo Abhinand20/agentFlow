@@ -46,6 +46,8 @@ go build -o af ./cmd/af
 af validate examples/review.af              # zero errors
 af graph    examples/review.af              # resolved flow as DOT
 af build    examples/review.af --target cursor --out .   # writes .cursor/
+af clean    examples/review.af --target cursor --out .  # remove that source's generated files
+af versions list --target cursor --out .                # build history by source
 af build    examples/review.af --emit-ir    # print the binding-agnostic IR
 ```
 
