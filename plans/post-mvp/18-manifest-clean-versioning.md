@@ -56,6 +56,9 @@ af versions status examples/review.af --target cursor --out .
 - Drift guard (AF310): skip modified artifacts unless `--force`
 - Cross-source guard (AF311): skip artifacts still owned by another source unless `--force`
 - Overlap warning (AF312): warn at build when artifact paths collide across sources
+- Invalid manifest skip (AF313): skip corrupt manifest files when loading directory
+- Unreadable artifact skip (AF314): skip artifacts that cannot be read during clean
+- Manifest slug keys on absolute source path (stable for a given file location; moving the repo creates a new slug)
 
 ## Packages & files
 

@@ -35,7 +35,7 @@ func printVersionsUsage(w io.Writer) {
 	fmt.Fprintln(w, "usage:")
 	fmt.Fprintln(w, "  af versions list [--target host] [--out dir] [<file>]")
 	fmt.Fprintln(w, "  af versions diff <file> --target host [--out dir] [--from N] [--to M]")
-	fmt.Fprintln(w, "  af versions status <file> --target host [--out dir]")
+	fmt.Fprintln(w, "  af versions status <file> --target host [--out dir]  (exit 1 when drift detected)")
 }
 
 func parseVersionsCommon(fs *flag.FlagSet, args []string) (target, out string, operands []string, code int) {
@@ -76,7 +76,9 @@ func cmdVersionsList(args []string, stdout, stderr io.Writer) int {
 		return printSourceHistory(stdout, stderr, out, target, operands[0])
 	}
 
-	all, err := manifest.LoadAll(out, target)
+	all, err := manifest.LoadAll(out, target, func(msg string) {
+		fmt.Fprintln(stderr, msg)
+	})
 	if err != nil {
 		fmt.Fprintf(stderr, "versions list: %v\n", err)
 		return 1
@@ -154,6 +156,10 @@ func cmdVersionsDiff(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "versions diff: need two valid versions (from=%d to=%d)\n", fromVer, toVer)
 		return 1
 	}
+	if fromVer > toVer {
+		fmt.Fprintf(stderr, "versions diff: --from must be <= --to (from=%d to=%d)\n", fromVer, toVer)
+		return 2
+	}
 
 	a := m.FindRecord(fromVer)
 	b := m.FindRecord(toVer)
@@ -210,7 +216,8 @@ func cmdVersionsStatus(args []string, stdout, stderr io.Writer) int {
 	printArtifactGroup(stdout, "clean", report.Clean)
 	printArtifactGroup(stdout, "modified", report.Modified)
 	printArtifactGroup(stdout, "missing", report.Missing)
-	if len(report.Modified)+len(report.Missing) > 0 {
+	printArtifactGroup(stdout, "unreadable", report.Unreadable)
+	if len(report.Modified)+len(report.Missing)+len(report.Unreadable) > 0 {
 		return 1
 	}
 	return 0

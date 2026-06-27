@@ -3,6 +3,7 @@ package manifest_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -192,7 +193,7 @@ func TestLoadAllAndOverlaps(t *testing.T) {
 	writeManifest(t, dir, "cursor", "examples/a.af", []string{".cursor/agents/shared.md"})
 	writeManifest(t, dir, "cursor", "examples/b.af", []string{".cursor/agents/shared.md", ".cursor/agents/b-only.md"})
 
-	all, err := manifest.LoadAll(dir, "cursor")
+	all, err := manifest.LoadAll(dir, "cursor", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,6 +204,40 @@ func TestLoadAllAndOverlaps(t *testing.T) {
 	conflicts := manifest.Overlaps(all[1], all)
 	if len(conflicts) != 1 {
 		t.Fatalf("conflicts = %#v", conflicts)
+	}
+}
+
+func TestArtifactOwnersMulti(t *testing.T) {
+	t.Parallel()
+	a := &manifest.Manifest{Source: manifest.Source{Path: "examples/a.af"}, Artifacts: []manifest.Artifact{{Path: ".cursor/mcp.json"}}}
+	b := &manifest.Manifest{Source: manifest.Source{Path: "examples/b.af"}, Artifacts: []manifest.Artifact{{Path: ".cursor/mcp.json"}}}
+	owners := manifest.ArtifactOwners([]*manifest.Manifest{a, b})
+	if len(owners[".cursor/mcp.json"]) != 2 {
+		t.Fatalf("owners = %#v", owners)
+	}
+	if other, ok := manifest.OtherOwner(".cursor/mcp.json", "examples/a.af", owners); !ok || other != "examples/b.af" {
+		t.Fatalf("other owner = %q ok=%v", other, ok)
+	}
+}
+
+func TestLoadAllSkipsInvalid(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	writeManifest(t, dir, "cursor", "examples/a.af", []string{".cursor/agents/a.md"})
+	manifestsDir := filepath.Join(dir, filepath.FromSlash(manifest.ManifestsDir("cursor")))
+	if err := os.WriteFile(filepath.Join(manifestsDir, "bad.json"), []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var warnings []string
+	all, err := manifest.LoadAll(dir, "cursor", func(msg string) { warnings = append(warnings, msg) })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 1 {
+		t.Fatalf("loaded = %d, want 1", len(all))
+	}
+	if len(warnings) != 1 || !strings.Contains(warnings[0], "AF313") {
+		t.Fatalf("warnings = %#v", warnings)
 	}
 }
 

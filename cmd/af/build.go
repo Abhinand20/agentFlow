@@ -74,6 +74,7 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 	}
 
 	var prior *manifest.Manifest
+	var current *manifest.Manifest
 	if !*noManifest {
 		priorLoaded, found, err := manifest.Load(*out, *target, sourcePath)
 		if err != nil {
@@ -98,13 +99,16 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 			Prior:        prior,
 			ToolVersion:  toolVersion,
 		})
+		current = &m
 
-		all, err := manifest.LoadAll(*out, *target)
+		all, err := manifest.LoadAll(*out, *target, func(msg string) {
+			fmt.Fprintln(stderr, msg)
+		})
 		if err != nil {
 			fmt.Fprintf(stderr, "build: load manifests: %v\n", err)
 			return 1
 		}
-		for path, detail := range manifest.Overlaps(&m, all) {
+		for path, detail := range manifest.Overlaps(current, all) {
 			fmt.Fprintf(stderr, "warning AF312: artifact %s overlaps another source (%s)\n", path, detail)
 		}
 
@@ -124,13 +128,8 @@ func cmdBuild(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stdout, filepath.Join(*out, filepath.FromSlash(p)))
 	}
 
-	if *prune && prior != nil && !*noManifest {
-		current, found, err := manifest.Load(*out, *target, sourcePath)
-		if err != nil || !found {
-			if err != nil {
-				fmt.Fprintf(stderr, "build: reload manifest for prune: %v\n", err)
-			}
-		} else if err := pruneArtifacts(*out, prior, current, *force, stderr); err != nil {
+	if *prune && prior != nil && current != nil && !*noManifest {
+		if err := pruneArtifacts(*out, prior, current, *force, stderr); err != nil {
 			fmt.Fprintf(stderr, "build: prune: %v\n", err)
 			return 1
 		}

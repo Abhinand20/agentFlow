@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -88,9 +87,10 @@ type Changes struct {
 
 // DriftReport classifies on-disk artifacts vs the manifest record.
 type DriftReport struct {
-	Clean    []Artifact
-	Modified []Artifact
-	Missing  []Artifact
+	Clean      []Artifact
+	Modified   []Artifact
+	Missing    []Artifact
+	Unreadable []Artifact
 }
 
 // TargetRoot returns the host config root directory for a binding target.
@@ -280,7 +280,8 @@ func Load(dir, target, sourcePath string) (*Manifest, bool, error) {
 }
 
 // LoadAll reads every manifest under the target manifests directory.
-func LoadAll(dir, target string) ([]*Manifest, error) {
+// Invalid JSON files are skipped; when warn is non-nil it receives AF313 messages.
+func LoadAll(dir, target string, warn func(string)) ([]*Manifest, error) {
 	manifestsDir := filepath.Join(dir, filepath.FromSlash(ManifestsDir(target)))
 	entries, err := os.ReadDir(manifestsDir)
 	if err != nil {
@@ -301,7 +302,10 @@ func LoadAll(dir, target string) ([]*Manifest, error) {
 		}
 		m, err := Unmarshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("manifest: decode %s: %w", entry.Name(), err)
+			if warn != nil {
+				warn(fmt.Sprintf("warning AF313: skip invalid manifest %s: %v", entry.Name(), err))
+			}
+			continue
 		}
 		cp := m
 		out = append(out, &cp)
@@ -335,18 +339,37 @@ func Overlaps(m *Manifest, others []*Manifest) map[string]string {
 	return conflicts
 }
 
-// ArtifactOwners maps artifact path to the source path that owns it across manifests.
-func ArtifactOwners(manifests []*Manifest) map[string]string {
-	owners := make(map[string]string)
+// ArtifactOwners maps artifact path to every source path that claims ownership.
+func ArtifactOwners(manifests []*Manifest) map[string][]string {
+	owners := make(map[string][]string)
 	for _, m := range manifests {
 		if m == nil {
 			continue
 		}
 		for _, a := range m.Artifacts {
-			owners[a.Path] = m.Source.Path
+			owners[a.Path] = appendUniqueSource(owners[a.Path], m.Source.Path)
 		}
 	}
 	return owners
+}
+
+// OtherOwner returns another source that owns path, if any.
+func OtherOwner(path, source string, owners map[string][]string) (string, bool) {
+	for _, owner := range owners[path] {
+		if owner != source {
+			return owner, true
+		}
+	}
+	return "", false
+}
+
+func appendUniqueSource(sources []string, source string) []string {
+	for _, s := range sources {
+		if s == source {
+			return sources
+		}
+	}
+	return append(sources, source)
 }
 
 // CurrentRecord returns the current build as a BuildRecord.
@@ -430,7 +453,7 @@ func DriftCheck(m *Manifest, dir string) DriftReport {
 				report.Missing = append(report.Missing, art)
 				continue
 			}
-			report.Missing = append(report.Missing, art)
+			report.Unreadable = append(report.Unreadable, art)
 			continue
 		}
 		if HashBytes(data) != art.SHA256 {
@@ -444,9 +467,10 @@ func DriftCheck(m *Manifest, dir string) DriftReport {
 
 // RemoveEmptyDirs removes empty directories walking up from relDir under root.
 func RemoveEmptyDirs(root, relDir string) error {
-	cur := filepath.Join(root, filepath.FromSlash(relDir))
+	root = filepath.Clean(root)
+	cur := filepath.Clean(filepath.Join(root, filepath.FromSlash(relDir)))
 	for {
-		if cur == root || !strings.HasPrefix(cur, root) {
+		if cur == root || !isWithinRoot(root, cur) {
 			return nil
 		}
 		entries, err := os.ReadDir(cur)
@@ -475,30 +499,33 @@ func RemoveEmptyDirs(root, relDir string) error {
 	}
 }
 
-// WalkManifestsDir returns all manifest file paths under dir for target.
-func WalkManifestsDir(dir, target string) ([]string, error) {
-	root := filepath.Join(dir, filepath.FromSlash(ManifestsDir(target)))
-	var paths []string
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil
-			}
-			return err
-		}
-		if d.IsDir() || !strings.HasSuffix(d.Name(), ".json") {
-			return nil
-		}
-		rel, err := filepath.Rel(dir, path)
-		if err != nil {
-			return err
-		}
-		paths = append(paths, filepath.ToSlash(rel))
-		return nil
-	})
+func isWithinRoot(root, cur string) bool {
+	rel, err := filepath.Rel(root, cur)
 	if err != nil {
-		return nil, err
+		return false
 	}
-	sort.Strings(paths)
-	return paths, nil
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// RemoveEmptyParents walks up from each artifact path and removes empty dirs under root.
+func RemoveEmptyParents(root string, artifactPaths []string) error {
+	seen := make(map[string]struct{})
+	for _, rel := range artifactPaths {
+		dir := filepath.Dir(filepath.FromSlash(rel))
+		for dir != "." && dir != "" {
+			if _, ok := seen[dir]; ok {
+				break
+			}
+			seen[dir] = struct{}{}
+			if err := RemoveEmptyDirs(root, dir); err != nil {
+				return err
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+	return nil
 }

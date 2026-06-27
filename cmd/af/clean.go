@@ -55,18 +55,20 @@ func cmdClean(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
+	warn := func(msg string) { fmt.Fprintln(stderr, msg) }
+	allManifests, err := manifest.LoadAll(*out, *target, warn)
+	if err != nil {
+		fmt.Fprintf(stderr, "clean: %v\n", err)
+		return 1
+	}
+
 	var manifests []*manifest.Manifest
 	if *all {
-		var loadErr error
-		manifests, loadErr = manifest.LoadAll(*out, *target)
-		if loadErr != nil {
-			fmt.Fprintf(stderr, "clean: %v\n", loadErr)
-			return 1
-		}
-		if len(manifests) == 0 {
+		if len(allManifests) == 0 {
 			fmt.Fprintf(stderr, "clean: no manifests found under %s\n", manifest.ManifestsDir(*target))
 			return 1
 		}
+		manifests = allManifests
 	} else {
 		m, ok, loadErr := manifest.Load(*out, *target, sourcePath)
 		if loadErr != nil {
@@ -80,11 +82,6 @@ func cmdClean(args []string, stdout, stderr io.Writer) int {
 		manifests = []*manifest.Manifest{m}
 	}
 
-	allManifests, err := manifest.LoadAll(*out, *target)
-	if err != nil {
-		fmt.Fprintf(stderr, "clean: %v\n", err)
-		return 1
-	}
 	owners := manifest.ArtifactOwners(allManifests)
 
 	var toDelete []string
@@ -129,6 +126,10 @@ func cmdClean(args []string, stdout, stderr io.Writer) int {
 		}
 		fmt.Fprintln(stdout, full)
 	}
+	if err := manifest.RemoveEmptyParents(*out, toDelete); err != nil {
+		fmt.Fprintf(stderr, "clean: %v\n", err)
+		return 1
+	}
 	if err := manifest.RemoveEmptyDirs(*out, manifest.ManifestsDir(*target)); err != nil {
 		fmt.Fprintf(stderr, "clean: %v\n", err)
 		return 1
@@ -137,19 +138,29 @@ func cmdClean(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "clean: %v\n", err)
 		return 1
 	}
+	if err := manifest.RemoveEmptyDirs(*out, manifest.TargetRoot(*target)); err != nil {
+		fmt.Fprintf(stderr, "clean: %v\n", err)
+		return 1
+	}
 
 	return 0
 }
 
-func shouldSkipClean(art manifest.Artifact, m *manifest.Manifest, owners map[string]string, report manifest.DriftReport, force bool, stderr io.Writer) bool {
+func shouldSkipClean(art manifest.Artifact, m *manifest.Manifest, owners map[string][]string, report manifest.DriftReport, force bool, stderr io.Writer) bool {
 	for _, mod := range report.Modified {
 		if mod.Path == art.Path && !force {
 			fmt.Fprintf(stderr, "warning AF310: skip modified artifact %s (use --force to delete)\n", art.Path)
 			return true
 		}
 	}
-	if owner, ok := owners[art.Path]; ok && owner != m.Source.Path && !force {
-		fmt.Fprintf(stderr, "warning AF311: skip %s still owned by %s (use --force to delete)\n", art.Path, owner)
+	for _, unreadable := range report.Unreadable {
+		if unreadable.Path == art.Path && !force {
+			fmt.Fprintf(stderr, "warning AF314: skip unreadable artifact %s (use --force to delete)\n", art.Path)
+			return true
+		}
+	}
+	if other, ok := manifest.OtherOwner(art.Path, m.Source.Path, owners); ok && !force {
+		fmt.Fprintf(stderr, "warning AF311: skip %s still owned by %s (use --force to delete)\n", art.Path, other)
 		return true
 	}
 	return false

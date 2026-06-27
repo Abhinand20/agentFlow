@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/Abhinand20/agentFlow/internal/emit"
+	"github.com/Abhinand20/agentFlow/internal/manifest"
 )
 
 func TestGraphReviewAf(t *testing.T) {
@@ -323,6 +326,69 @@ func TestVersionsDiff(t *testing.T) {
 	}
 	if !strings.Contains(out, "diff v1 -> v2") {
 		t.Fatalf("expected default diff between latest builds:\n%s", out)
+	}
+}
+
+func TestCleanCrossSourceSharedArtifact(t *testing.T) {
+	t.Parallel()
+	outDir := t.TempDir()
+	sharedRel := ".cursor/agents/shared-agent.md"
+	sharedFull := filepath.Join(outDir, filepath.FromSlash(sharedRel))
+	if err := os.MkdirAll(filepath.Dir(sharedFull), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(sharedFull, []byte("shared"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	writeCrossSourceManifest(t, outDir, "examples/a.af", []string{sharedRel, ".cursor/agents/a-only.md"})
+	writeCrossSourceManifest(t, outDir, "examples/b.af", []string{sharedRel})
+
+	if _, stderr, code := runInProc("clean", "examples/a.af", "--target", "cursor", "--out", outDir); code != 0 {
+		t.Fatalf("clean a exit = %d\n%s", code, stderr)
+	}
+	if _, err := os.Stat(sharedFull); err != nil {
+		t.Fatalf("shared artifact should remain while b still owns it: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, filepath.FromSlash(".cursor/agents/a-only.md"))); !os.IsNotExist(err) {
+		t.Fatalf("a-only artifact should be removed")
+	}
+}
+
+func writeCrossSourceManifest(t *testing.T, dir, source string, paths []string) {
+	t.Helper()
+	fs := emit.NewFS()
+	for _, p := range paths {
+		fs.Write(p, []byte("x"))
+	}
+	m := manifest.Build(manifest.BuildOptions{
+		Target:       "cursor",
+		SourcePath:   source,
+		SourceSHA256: manifest.HashBytes([]byte(source)),
+		IRHash:       "ir",
+		FS:           fs,
+		ToolVersion:  "test",
+	})
+	data, err := manifest.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rel := manifest.ManifestRelPath("cursor", source)
+	full := filepath.Join(dir, filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(full, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range paths {
+		artifactFull := filepath.Join(dir, filepath.FromSlash(p))
+		if err := os.MkdirAll(filepath.Dir(artifactFull), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(artifactFull, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
