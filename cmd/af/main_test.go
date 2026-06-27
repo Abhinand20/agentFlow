@@ -8,6 +8,7 @@ import (
 )
 
 const reviewAf = "../../examples/review.af"
+const pipelineAf = "../../examples/pipeline.af"
 
 // runInProc invokes the dispatcher in-process and returns stdout, stderr, and
 // the exit code so tests can assert the exit policy precisely.
@@ -26,7 +27,7 @@ func TestUsageNoArgs(t *testing.T) {
 	if !strings.Contains(out, "AgentFlow compiler") {
 		t.Fatalf("usage missing banner: %s", out)
 	}
-	for _, cmd := range []string{"validate", "build", "graph"} {
+	for _, cmd := range []string{"validate", "build", "clean", "versions", "graph"} {
 		if !strings.Contains(out, cmd) {
 			t.Fatalf("usage missing %q command: %s", cmd, out)
 		}
